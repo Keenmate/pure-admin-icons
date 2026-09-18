@@ -73,16 +73,18 @@ defmodule PureAdminIconsWeb.IconFileController do
     end
   end
 
-  # Send the SVG with a strong ETag (size + mtime) so browsers revalidate
-  # cheaply instead of holding stale cached files forever.
-  # Cache-Control is still a year but without `immutable` so If-None-Match can fire.
+  # Send the SVG with a strong ETag (size + mtime) so browsers revalidate cheaply.
+  # max-age is one day — the icon import cadence — so a cached icon stays fresh for
+  # at most one import cycle, then the ETag revalidation (304, or 200 when a re-sync
+  # rewrote the file) picks up any changes. A longer TTL would hold stale SVGs past
+  # an import; the ETag can't help while the entry is still "fresh".
   defp serve_svg(conn, path) do
     etag = file_etag(path)
 
     conn =
       conn
       |> put_resp_content_type("image/svg+xml")
-      |> put_resp_header("cache-control", "public, max-age=31536000, stale-while-revalidate=86400")
+      |> put_resp_header("cache-control", "public, max-age=86400")
       |> put_resp_header("etag", etag)
 
     case Plug.Conn.get_req_header(conn, "if-none-match") do
