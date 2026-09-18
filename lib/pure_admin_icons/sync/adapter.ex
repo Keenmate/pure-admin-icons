@@ -90,7 +90,9 @@ defmodule PureAdminIcons.Sync.Adapter do
     "phosphor" => PureAdminIcons.Sync.Adapters.Phosphor,
     "remix" => PureAdminIcons.Sync.Adapters.Remix,
     "material" => PureAdminIcons.Sync.Adapters.Material,
-    "bootstrap" => PureAdminIcons.Sync.Adapters.Bootstrap
+    "bootstrap" => PureAdminIcons.Sync.Adapters.Bootstrap,
+    "simpleicons" => PureAdminIcons.Sync.Adapters.Simpleicons,
+    "carbon" => PureAdminIcons.Sync.Adapters.Carbon
   }
 
   @doc """

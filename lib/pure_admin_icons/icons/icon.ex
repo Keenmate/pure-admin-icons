@@ -4,7 +4,7 @@ defmodule PureAdminIcons.Icons.Icon do
   Works with both the generated Database.Models.SearchIconsModel and other icon data.
   """
 
-  @icon_sets ~w(fluentui lucide tabler heroicons fontawesome phosphor bootstrap remix material)
+  @icon_sets ~w(fluentui lucide tabler heroicons fontawesome phosphor bootstrap remix material simpleicons carbon)
 
   # Define struct matching the database model fields
   defstruct [
