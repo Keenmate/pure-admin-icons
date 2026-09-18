@@ -12,8 +12,17 @@ lib/pure_admin_icons/icon_sets/
 ├── fontawesome.ex    # Font Awesome Free
 ├── heroicons.ex      # Tailwind Heroicons
 ├── lucide.ex         # Lucide Icons
-└── tabler.ex         # Tabler Icons
+├── material.ex       # Material Symbols
+├── tabler.ex         # Tabler Icons
+├── bootstrap.ex      # Bootstrap Icons
+├── simpleicons.ex    # Simple Icons (brand logos)
+└── carbon.ex         # Carbon Icons (IBM)
 ```
+
+Sets without a module here (e.g. Phosphor, Remix) fall back to `Generic`.
+A formatter only needs to implement the frameworks a set actually ships a package
+for — return `{nil, nil}` from the `*_package` callback for the rest and that
+framework's section is simply hidden in the modal.
 
 ## Behaviour
 
@@ -54,7 +63,11 @@ The LiveView calls only the dispatcher, never individual modules.
   "fontawesome" => PureAdminIcons.IconSets.Fontawesome,
   "heroicons" => PureAdminIcons.IconSets.Heroicons,
   "lucide" => PureAdminIcons.IconSets.Lucide,
-  "tabler" => PureAdminIcons.IconSets.Tabler
+  "material" => PureAdminIcons.IconSets.Material,
+  "tabler" => PureAdminIcons.IconSets.Tabler,
+  "bootstrap" => PureAdminIcons.IconSets.Bootstrap,
+  "simpleicons" => PureAdminIcons.IconSets.Simpleicons,
+  "carbon" => PureAdminIcons.IconSets.Carbon
 }
 ```
 

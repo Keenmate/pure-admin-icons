@@ -54,7 +54,10 @@ defmodule PureAdminIcons.IconSets.Formatter do
     "heroicons" => PureAdminIcons.IconSets.Heroicons,
     "lucide" => PureAdminIcons.IconSets.Lucide,
     "material" => PureAdminIcons.IconSets.Material,
-    "tabler" => PureAdminIcons.IconSets.Tabler
+    "tabler" => PureAdminIcons.IconSets.Tabler,
+    "bootstrap" => PureAdminIcons.IconSets.Bootstrap,
+    "simpleicons" => PureAdminIcons.IconSets.Simpleicons,
+    "carbon" => PureAdminIcons.IconSets.Carbon
   }
 
   @doc """
