@@ -134,6 +134,7 @@ defmodule PureAdminIcons.Sync.Adapters.Simpleicons do
             svg_hash: hash_content(content)
           }
         end)
+        |> disambiguate_identity()
 
       Logger.info("[SimpleIcons] Parsed #{length(icons)} icons")
       {:ok, %{icons: icons, synonyms: %{}, discrepancies: []}}
@@ -184,6 +185,28 @@ defmodule PureAdminIcons.Sync.Adapters.Simpleicons do
   end
 
   # Private helpers
+
+  # Simple Icons uses unique slugs but non-unique display titles: several distinct
+  # brands share a name (e.g. two "Spring", two "Hive"). The DB keys icon identity
+  # on helpers.normalize_name(original_name) + style, so duplicate titles would
+  # collide on uq_icon_identity. For any group of icons whose titles normalize to
+  # the same key, fall back to the slug-derived name (unique) so both survive:
+  # "Backstage"/"Backstage" -> "Backstage"/"Backstage Casting".
+  defp disambiguate_identity(icons) do
+    icons
+    |> Enum.group_by(fn icon -> normalize_name(icon.name) end)
+    |> Enum.flat_map(fn
+      {_key, [only]} -> [only]
+      {_key, members} -> Enum.map(members, fn i -> %{i | name: Naming.title_case(i.name_lower)} end)
+    end)
+    # Defensive: never emit two icons with the same normalized identity.
+    |> Enum.uniq_by(fn icon -> normalize_name(icon.name) end)
+  end
+
+  # Mirrors helpers.normalize_name/1 in the DB: strip -_whitespace, lowercase.
+  defp normalize_name(name) do
+    name |> String.replace(~r/[-_\s]+/, "") |> String.downcase()
+  end
 
   defp read_svg(path) do
     case File.read(path) do
