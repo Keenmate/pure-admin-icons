@@ -81,14 +81,38 @@ Each `icon_map`:
   multi-size). Import uses it to detect content changes across syncs.
 - **Synonyms**: if the source ships tags/keywords (Remix has `tags.json`), collect them
   into `synonyms: %{display_name => [tag, ...]}`. Otherwise `%{}`.
-- **Dedupe** on the DB's normalized identity when a source has near-duplicate names —
-  see `Enum.uniq_by/2` in `remix.ex`.
+- **Identity must be unique** — see the callout below.
+
+> **⚠️ Identity uniqueness.** The DB enforces `uq_icon_identity` on
+> `(icon_set_code, helpers.normalize_name(original_name), style_code)`, where
+> `original_name` is the icon map's `name` and `normalize_name` = `lower(regexp_replace(name, '[-_\s]+', ''))`.
+> So within one set+style, two icons whose **display names normalize to the same key**
+> collide and the stage `COPY` crashes with a `23505 unique_violation`. This bites any
+> source with non-unique display names:
+> - **Simple Icons** has several distinct brands sharing a title (two "Spring", two
+>   "Hive"). Its adapter disambiguates by falling back to the unique slug-derived name
+>   (`"Backstage"` → `"Backstage Casting"`) — see `disambiguate_identity/1` in
+>   `simpleicons.ex`.
+> - If you don't need to keep both, just `Enum.uniq_by/2` on the normalized identity to
+>   drop duplicates (Remix does this in `remix.ex`).
+>
+> Either way, a final `uniq_by(normalize_name(name))` is cheap insurance against a crash.
 
 ### `move_svgs/2`
 
 Copy SVGs into `{output_dir}/{icon_set}/{style}/{filename}.svg`, where `filename`
 matches the values in the `filenames` map from `parse/1`. Wipe the style dir first
 (`File.rm_rf` → `File.mkdir_p!`) so removed icons don't linger.
+
+> **⚠️ SVG theming (root `fill`).** The UI recolors icons via CSS `color` /
+> `currentColor`. If a source's SVGs have **no `fill` on the root `<svg>`** (paths then
+> default to black), they render invisibly on dark themes. Inject
+> `fill="currentColor"` into the root tag on write instead of a plain `File.copy` — see
+> `write_themed_svg/2` + `inject_current_color/1` in `material.ex`, `carbon.ex`, or
+> `simpleicons.ex`. Sets that already ship `fill="currentColor"` (e.g. Bootstrap) need
+> nothing — the injection is a no-op guarded by a regex check. Note the `style_color_method`
+> in `const.icon_set` describes *how* to recolor (`fill`/`stroke`/`multicolor`); it does
+> **not** rewrite the SVG — that's this step's job.
 
 ### `cleanup/1`
 

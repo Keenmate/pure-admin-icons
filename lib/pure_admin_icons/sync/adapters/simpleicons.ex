@@ -160,9 +160,9 @@ defmodule PureAdminIcons.Sync.Adapters.Simpleicons do
         source = Path.join(icons_dir, filename)
         target = Path.join(style_dir, filename)
 
-        case File.copy(source, target) do
-          {:ok, _} -> 1
-          {:error, _} -> 0
+        case write_themed_svg(source, target) do
+          :ok -> 1
+          :error -> 0
         end
       end)
       |> Enum.sum()
@@ -212,6 +212,28 @@ defmodule PureAdminIcons.Sync.Adapters.Simpleicons do
     case File.read(path) do
       {:ok, data} -> data
       _ -> ""
+    end
+  end
+
+  # Simple Icons SVGs ship without a fill on their root <svg>, so paths fall back
+  # to the SVG default (black) and don't respond to CSS color theming. Inject
+  # `fill="currentColor"` on the root tag during copy so the icons inherit text
+  # color (visible on any theme) like Material/Lucide/etc.
+  defp write_themed_svg(source, target) do
+    with {:ok, content} <- File.read(source),
+         themed = inject_current_color(content),
+         :ok <- File.write(target, themed) do
+      :ok
+    else
+      _ -> :error
+    end
+  end
+
+  defp inject_current_color(svg) do
+    if Regex.match?(~r/\A\s*<svg\b[^>]*\sfill\s*=/, svg) do
+      svg
+    else
+      String.replace(svg, ~r/<svg\b/, ~S(<svg fill="currentColor"), global: false)
     end
   end
 
