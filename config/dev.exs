@@ -85,4 +85,6 @@ config :phoenix_live_view,
   debug_heex_annotations: true,
   debug_attributes: true,
   # Enable helpful, but potentially expensive runtime checks
-  enable_expensive_runtime_checks: true
+  enable_expensive_runtime_checks: true,
+  # Silence the colocated-assets symlink warning on Windows (no admin symlink perms)
+  colocated_assets: [disable_symlink_warning: true]

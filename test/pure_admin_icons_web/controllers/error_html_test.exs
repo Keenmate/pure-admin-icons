@@ -5,10 +5,14 @@ defmodule PureAdminIconsWeb.ErrorHTMLTest do
   import Phoenix.Template, only: [render_to_string: 4]
 
   test "renders 404.html" do
-    assert render_to_string(PureAdminIconsWeb.ErrorHTML, "404", "html", []) == "Not Found"
+    html = render_to_string(PureAdminIconsWeb.ErrorHTML, "404", "html", [])
+    assert html =~ "Page Not Found"
+    assert html =~ "404"
   end
 
   test "renders 500.html" do
-    assert render_to_string(PureAdminIconsWeb.ErrorHTML, "500", "html", []) == "Internal Server Error"
+    html = render_to_string(PureAdminIconsWeb.ErrorHTML, "500", "html", [])
+    assert html =~ "Something Went Wrong"
+    assert html =~ "500"
   end
 end
