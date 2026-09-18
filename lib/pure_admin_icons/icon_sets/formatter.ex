@@ -57,7 +57,9 @@ defmodule PureAdminIcons.IconSets.Formatter do
     "tabler" => PureAdminIcons.IconSets.Tabler,
     "bootstrap" => PureAdminIcons.IconSets.Bootstrap,
     "simpleicons" => PureAdminIcons.IconSets.Simpleicons,
-    "carbon" => PureAdminIcons.IconSets.Carbon
+    "carbon" => PureAdminIcons.IconSets.Carbon,
+    "phosphor" => PureAdminIcons.IconSets.Phosphor,
+    "remix" => PureAdminIcons.IconSets.Remix
   }
 
   @doc """

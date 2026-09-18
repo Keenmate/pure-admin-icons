@@ -16,13 +16,15 @@ lib/pure_admin_icons/icon_sets/
 ├── tabler.ex         # Tabler Icons
 ├── bootstrap.ex      # Bootstrap Icons
 ├── simpleicons.ex    # Simple Icons (brand logos)
-└── carbon.ex         # Carbon Icons (IBM)
+├── carbon.ex         # Carbon Icons (IBM)
+├── phosphor.ex       # Phosphor Icons
+└── remix.ex          # Remix Icon
 ```
 
-Sets without a module here (e.g. Phosphor, Remix) fall back to `Generic`.
-A formatter only needs to implement the frameworks a set actually ships a package
-for — return `{nil, nil}` from the `*_package` callback for the rest and that
-framework's section is simply hidden in the modal.
+All registered icon sets currently have a formatter; `Generic` is the fallback for
+any unregistered/unknown code. A formatter only needs to implement the frameworks a
+set actually ships a package for — return `{nil, nil}` from the `*_package` callback
+for the rest and that framework's section is simply hidden in the modal.
 
 ## Behaviour
 
@@ -67,7 +69,9 @@ The LiveView calls only the dispatcher, never individual modules.
   "tabler" => PureAdminIcons.IconSets.Tabler,
   "bootstrap" => PureAdminIcons.IconSets.Bootstrap,
   "simpleicons" => PureAdminIcons.IconSets.Simpleicons,
-  "carbon" => PureAdminIcons.IconSets.Carbon
+  "carbon" => PureAdminIcons.IconSets.Carbon,
+  "phosphor" => PureAdminIcons.IconSets.Phosphor,
+  "remix" => PureAdminIcons.IconSets.Remix
 }
 ```
 
