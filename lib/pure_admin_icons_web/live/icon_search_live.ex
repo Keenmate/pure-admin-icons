@@ -56,6 +56,10 @@ defmodule PureAdminIconsWeb.IconSearchLive do
     raw_prefs = connect_params["platform_prefs"] || %{}
     platform_prefs_by_set = parse_platform_prefs(raw_prefs)
 
+    # Basket: restore the list of picked icons from localStorage (via connect params).
+    # Stored as full icon maps so the drawer can render + bulk-download without a DB hit.
+    basket = restore_basket(connect_params["basket"])
+
     {last_sync_us, last_sync_result} = :timer.tc(fn -> Icons.get_last_sync() end)
 
     {last_sync_at, discrepancy_count} =
@@ -94,6 +98,9 @@ defmodule PureAdminIconsWeb.IconSearchLive do
       |> assign(icon_list_size: icon_list_size)
       |> assign(last_sync_at: last_sync_at)
       |> assign(discrepancy_count: discrepancy_count)
+      |> assign(basket: basket)
+      |> assign(basket_ids: basket_ids(basket))
+      |> assign(basket_open: false)
 
     duration_ms =
       System.convert_time_unit(System.monotonic_time() - mount_start, :native, :millisecond)
@@ -275,6 +282,81 @@ defmodule PureAdminIconsWeb.IconSearchLive do
     end
   end
 
+  # ── Basket helpers ────────────────────────────────────────────
+  defp basket_ids(basket), do: MapSet.new(basket, &to_string(&1.icon_id))
+
+  defp put_basket(socket, basket) do
+    socket
+    |> assign(basket: basket, basket_ids: basket_ids(basket))
+    |> push_event("save_basket", %{basket: basket})
+  end
+
+  # Restore the basket from connect params (a list of JSON maps with string keys).
+  # Atomize known top-level keys so the grid/list components and Icon/Formatter
+  # helpers (which pattern-match atom keys) work on restored entries. Nested maps
+  # (filenames, platform_identifiers) keep string keys — Icon helpers tolerate both.
+  defp restore_basket(list) when is_list(list) do
+    list
+    |> Enum.map(&atomize_basket_item/1)
+    |> Enum.reject(&is_nil/1)
+  end
+
+  defp restore_basket(_), do: []
+
+  defp atomize_basket_item(item) when is_map(item) do
+    atomized =
+      for {k, v} <- item, key = to_known_atom(k), key != nil, into: %{}, do: {key, v}
+
+    if Map.has_key?(atomized, :icon_id), do: atomized, else: nil
+  end
+
+  defp atomize_basket_item(_), do: nil
+
+  # Convert a JSON key to an existing atom, or nil if unknown (avoids atom-table
+  # exhaustion from arbitrary client input).
+  defp to_known_atom(k) when is_atom(k), do: k
+
+  defp to_known_atom(k) when is_binary(k) do
+    String.to_existing_atom(k)
+  rescue
+    ArgumentError -> nil
+  end
+
+  defp to_known_atom(_), do: nil
+
+  # Build a plain-text block listing every basket icon's platform identifiers,
+  # using each icon set's enabled + supported platforms.
+  defp build_copy_all_text(basket, prefs_by_set) do
+    basket
+    |> Enum.map(fn icon ->
+      header = "#{icon.name} (#{icon.icon_set_code}/#{icon.style_code})"
+
+      lines =
+        icon
+        |> preferred_platforms_for(prefs_by_set, 8)
+        |> Enum.map(fn platform -> "  #{platform}: #{get_platform_id(icon, platform)}" end)
+
+      Enum.join([header | lines], "\n")
+    end)
+    |> Enum.join("\n\n")
+  end
+
+  # Compact payload for the client-side bulk download hook: one entry per basket
+  # icon with its display name, set, and the SVG URL (default size). Icons with no
+  # resolvable SVG URL are dropped.
+  defp basket_download_payload(basket) do
+    basket
+    |> Enum.map(fn icon ->
+      %{
+        name: icon.name,
+        set: icon.icon_set_code,
+        style: icon.style_code,
+        url: Icon.svg_url(icon, default_size(icon.sizes))
+      }
+    end)
+    |> Enum.reject(&is_nil(&1.url))
+  end
+
   defp parse_page(nil), do: 1
   defp parse_page(""), do: 1
 
@@ -361,7 +443,11 @@ defmodule PureAdminIconsWeb.IconSearchLive do
   end
 
   def handle_event("select_icon", %{"id" => id}, socket) do
-    icon = Enum.find(socket.assigns.icons, &(to_string(&1.icon_id) == id))
+    # Look in the current results first, then fall back to the basket so cards
+    # opened from the drawer work even when they're not on the current page.
+    icon =
+      Enum.find(socket.assigns.icons, &(to_string(&1.icon_id) == id)) ||
+        Enum.find(socket.assigns.basket, &(to_string(&1.icon_id) == id))
     # Fetch metrics for this icon (from raw table, fast enough for single icon)
     metrics = if icon, do: Icons.icon_metrics(icon.icon_id), else: %{}
     # Load this icon set's prefs (or defaults)
@@ -375,6 +461,44 @@ defmodule PureAdminIconsWeb.IconSearchLive do
 
   def handle_event("close_modal", _params, socket) do
     {:noreply, assign(socket, selected_icon: nil)}
+  end
+
+  def handle_event("toggle_basket_drawer", _params, socket) do
+    open = !socket.assigns.basket_open
+    socket = assign(socket, basket_open: open)
+    # Tell the designer preview to (re)load — it mounts off-screen at page load,
+    # so the canvas can be empty until the drawer is actually opened.
+    socket = if open, do: push_event(socket, "basket_drawer_opened", %{}), else: socket
+    {:noreply, socket}
+  end
+
+  def handle_event("close_basket_drawer", _params, socket) do
+    {:noreply, assign(socket, basket_open: false)}
+  end
+
+  def handle_event("toggle_basket", %{"id" => id}, socket) do
+    id = to_string(id)
+
+    new_basket =
+      if MapSet.member?(socket.assigns.basket_ids, id) do
+        Enum.reject(socket.assigns.basket, &(to_string(&1.icon_id) == id))
+      else
+        case Enum.find(socket.assigns.icons, &(to_string(&1.icon_id) == id)) do
+          nil -> socket.assigns.basket
+          icon -> socket.assigns.basket ++ [icon]
+        end
+      end
+
+    {:noreply, put_basket(socket, new_basket)}
+  end
+
+  def handle_event("clear_basket", _params, socket) do
+    {:noreply, put_basket(socket, [])}
+  end
+
+  def handle_event("copy_all_identifiers", _params, socket) do
+    text = build_copy_all_text(socket.assigns.basket, socket.assigns.platform_prefs_by_set)
+    {:noreply, push_event(socket, "copy_all_ids", %{text: text})}
   end
 
   def handle_event("toggle_platform", %{"platform" => platform}, socket) do
@@ -635,7 +759,11 @@ defmodule PureAdminIconsWeb.IconSearchLive do
     <div class="min-h-screen flex flex-col">
       <!-- Hidden element for metrics tracking from JS -->
       <div id="metrics-tracker" phx-hook="MetricsTracker" class="hidden"></div>
-       <Layouts.site_nav icon_count={@icon_count} set_count={length(@icon_sets)} />
+       <Layouts.site_nav
+        icon_count={@icon_count}
+        set_count={length(@icon_sets)}
+        basket_count={length(@basket)}
+      />
       <%!-- Hero with search and filters --%>
       <div class="hero-gradient py-4 px-4 border-b border-base-300">
         <div class="max-w-5xl mx-auto text-center mb-3">
@@ -1006,9 +1134,11 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                   selected_icon_sets={@selected_icon_sets}
                   platform_prefs_by_set={@platform_prefs_by_set}
                   available_styles={@available_styles}
+                  basket_ids={@basket_ids}
+                  id_prefix=""
                 />
               </div>
-              
+
               <div class="view-list">
                 <.icon_list
                   icons={@icons}
@@ -1016,6 +1146,8 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                   selected_sizes={@selected_sizes}
                   available_sizes={@available_sizes}
                   icon_list_size={@icon_list_size}
+                  basket_ids={@basket_ids}
+                  id_prefix=""
                 />
               </div>
             </div>
@@ -1051,7 +1183,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
             <!-- Icon Detail (LiveComponent — isolated render cycle).
                  Stable #modal-container prevents morphdom sibling mismatch when it appears/disappears.
                  Inline 40% panel on xl; fixed overlay modal below xl (positioning is inside the component). -->
-            <div id="modal-container" phx-hook="DetailLayout" class={if(@selected_icon, do: "xl:w-2/5 xl:flex-shrink-0")}>
+            <div id="modal-container" class={if(@selected_icon, do: "xl:w-2/5 xl:flex-shrink-0")}>
               <%= if @selected_icon do %>
                 <.live_component
                   module={PureAdminIconsWeb.IconModalComponent}
@@ -1065,6 +1197,240 @@ defmodule PureAdminIconsWeb.IconSearchLive do
           </div>
         </div>
       </main>
+      <!-- Basket drawer (right-side slide-over). Reuses the same grid/list cards
+           as the search results, namespaced with id_prefix="basket-" so SVG
+           container ids don't collide with the main display. -->
+      <div
+        class={["fixed inset-0 z-[60]", if(!@basket_open, do: "pointer-events-none")]}
+        aria-hidden={to_string(!@basket_open)}
+      >
+        <div
+          class={[
+            "fixed inset-0 bg-black/50 transition-opacity duration-200",
+            if(@basket_open, do: "opacity-100", else: "opacity-0")
+          ]}
+          phx-click="close_basket_drawer"
+        >
+        </div>
+        <div class={[
+          "fixed right-0 top-0 h-full w-full max-w-md bg-base-100 shadow-2xl flex flex-col transition-transform duration-200",
+          if(@basket_open, do: "translate-x-0", else: "translate-x-full")
+        ]}>
+          <!-- Header -->
+          <div class="flex items-center justify-between gap-2 px-4 py-3 border-b border-base-300">
+            <div class="flex items-baseline gap-2 min-w-0">
+              <h2 class="text-lg font-bold text-base-content">{t("iconSearch.headers.basket")}</h2>
+              <span class="text-sm text-base-content/50">
+                {t("iconSearch.messages.basketCount", %{count: length(@basket)})}
+              </span>
+            </div>
+            <button
+              type="button"
+              phx-click="close_basket_drawer"
+              class="p-1.5 rounded-lg text-base-content/60 hover:text-base-content hover:bg-base-200 transition-colors"
+              title={t("common.buttons.close")}
+            >
+              <.icon name="hero-x-mark" class="size-5" />
+            </button>
+          </div>
+          <!-- Actions -->
+          <div
+            id="basket-actions"
+            phx-hook="BasketActions"
+            data-basket={Jason.encode!(basket_download_payload(@basket))}
+            class="px-4 py-3 border-b border-base-300"
+          >
+            <div class="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                data-basket-action="svg-zip"
+                disabled={@basket == []}
+                class="btn-action flex-col gap-1 py-2 h-auto text-xs disabled:opacity-40 disabled:pointer-events-none"
+                title={t("iconSearch.buttons.downloadSvgZip")}
+              >
+                <.icon name="hero-arrow-down-tray" class="size-5" />
+                <span>SVG</span>
+              </button>
+              <button
+                type="button"
+                data-basket-action="png-zip"
+                disabled={@basket == []}
+                class="btn-action flex-col gap-1 py-2 h-auto text-xs disabled:opacity-40 disabled:pointer-events-none"
+                title={t("iconSearch.buttons.downloadPngZip")}
+              >
+                <.icon name="hero-photo" class="size-5" />
+                <span>PNG</span>
+              </button>
+              <button
+                type="button"
+                phx-click="copy_all_identifiers"
+                disabled={@basket == []}
+                class="btn-action flex-col gap-1 py-2 h-auto text-xs disabled:opacity-40 disabled:pointer-events-none"
+                title={t("iconSearch.buttons.copyAllIds")}
+              >
+                <.icon name="hero-clipboard-document" class="size-5" />
+                <span>IDs</span>
+              </button>
+            </div>
+            <%= if @basket != [] do %>
+              <button
+                type="button"
+                phx-click="clear_basket"
+                class="mt-2 w-full text-xs text-base-content/50 hover:text-error transition-colors py-1"
+              >
+                {t("iconSearch.buttons.clearBasket")}
+              </button>
+            <% end %>
+          </div>
+          <!-- Designer (collapsible): reuses the real DownloadDesigner controls +
+               a preset picker. All settings write the shared localStorage the bulk
+               SVG/PNG exports read, so "current/last config" applies to downloads. -->
+          <%= if @basket != [] do %>
+            <% designer_icon = List.first(@basket) %>
+            <div class="border-b border-base-300">
+              <button
+                type="button"
+                phx-click={JS.toggle(to: "#basket-designer-panel", in: "fade-in-scale", out: "fade-out-scale")}
+                class="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium text-base-content/80 hover:bg-base-200 transition-colors"
+              >
+                <span class="inline-flex items-center gap-1.5">
+                  <.icon name="hero-swatch" class="size-4" /> {t("iconSearch.buttons.designer")}
+                </span>
+                <.icon name="hero-chevron-down" class="size-4" />
+              </button>
+              <div id="basket-designer-panel" style="display: none;" class="px-4 pb-3 space-y-3">
+                <p class="text-xs text-base-content/50">{t("iconSearch.messages.designerHint")}</p>
+                <!-- Preset / color picker (compact) -->
+                <div
+                  id="basket-quick-presets"
+                  phx-hook="QuickPresets"
+                  class="relative"
+                  data-presets={Jason.encode!(preview_presets())}
+                >
+                  <button type="button" class="quick-preset-trigger btn-pager gap-2">
+                    <span
+                      class="quick-preset-swatch w-4 h-4 rounded-sm border border-base-content/20"
+                      style="background: linear-gradient(135deg, #ffffff 50%, #212121 50%);"
+                    >
+                    </span> <span class="quick-preset-label text-xs">Classic Light</span>
+                    <svg class="w-3 h-3 text-base-content/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  <div
+                    class="quick-preset-dropdown hidden py-1 rounded-lg bg-base-100 border border-base-content/20 shadow-xl z-50 w-44 max-h-64 overflow-y-auto"
+                    style="position: fixed; top: 0; left: 0;"
+                  >
+                    <%= for preset <- Enum.sort_by(preview_presets(), & &1["label"]) do %>
+                      <button
+                        type="button"
+                        data-preset={preset["key"]}
+                        data-color={preset["color"]}
+                        data-bg={preset["bg"]}
+                        data-label={preset["label"]}
+                        class="quick-preset w-full text-left px-3 py-1.5 text-sm cursor-pointer hover:opacity-80"
+                        style={preset_button_style(preset)}
+                      >
+                        {preset["label"]}
+                      </button>
+                    <% end %>
+                  </div>
+                </div>
+                <!-- Designer controls (no per-icon download buttons — the bulk
+                     actions above handle downloads). Preview shows the first icon. -->
+                <div
+                  id={"basket-download-designer-#{designer_icon.icon_id}"}
+                  phx-hook="DownloadDesigner"
+                  data-name={designer_icon.name}
+                  data-svg-url={
+                    if Map.get(designer_icon, :has_single_source, false),
+                      do: Icon.svg_url(designer_icon, 0),
+                      else: Icon.svg_url(designer_icon, List.first(designer_icon.sizes))
+                  }
+                >
+                  <div class="bg-base-100 rounded-lg p-3 space-y-3">
+                    <div class="flex items-center gap-3">
+                      <canvas
+                        class="designer-preview rounded-lg border border-base-300 flex-shrink-0"
+                        width="72"
+                        height="72"
+                        style="width: 72px; height: 72px;"
+                      >
+                      </canvas>
+                      <label class="flex-1 flex items-center gap-2 cursor-pointer text-xs text-base-content/70">
+                        <input type="checkbox" class="designer-include-colors w-3.5 h-3.5 rounded border-base-300" />
+                        <span>{t("iconDetail.labels.includeColors")}</span>
+                      </label>
+                    </div>
+                    <!-- Sliders full-width (label above) — a narrow drawer squishes
+                         side-by-side ranges into unusable pills. -->
+                    <div class="space-y-2 text-xs">
+                      <div>
+                        <div class="flex items-center justify-between text-base-content/70 mb-1">
+                          <span>{t("iconDetail.labels.padding")}</span>
+                          <span class="designer-padding-label text-base-content/50">10%</span>
+                        </div>
+                        <input type="range" min="0" max="40" value="10" class="designer-padding range range-xs range-primary w-full" />
+                      </div>
+                      <div>
+                        <div class="flex items-center justify-between text-base-content/70 mb-1">
+                          <span>{t("iconDetail.labels.corners")}</span>
+                          <span class="designer-radius-label text-base-content/50">20%</span>
+                        </div>
+                        <input type="range" min="0" max="50" value="20" class="designer-radius range range-xs range-primary w-full" />
+                      </div>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                      <span class="text-base-content/70">{t("iconDetail.labels.sizes")}</span>
+                      <%= for size <- [32, 64, 128, 256, 512, 1024] do %>
+                        <label class="inline-flex items-center gap-1 cursor-pointer">
+                          <input type="checkbox" checked class="designer-size w-3.5 h-3.5 rounded border-base-300" value={size} />
+                          <span class="text-base-content/70">{size}</span>
+                        </label>
+                      <% end %>
+                      <div class="flex items-center gap-1">
+                        <input type="number" min="1" max="4096" placeholder={t("iconDetail.placeholders.customSize")} class="designer-custom-size w-16 px-2 py-0.5 border border-base-300 rounded" />
+                        <span class="text-base-content/50">px</span>
+                      </div>
+                    </div>
+                    <label class="px-3 py-1.5 rounded text-xs font-medium cursor-pointer border border-base-300 hover:bg-base-200 inline-flex items-center gap-1.5" title={t("iconDetail.tooltips.importSettings")}>
+                      <.icon name="hero-arrow-up-tray" class="size-4" /> {t("iconDetail.buttons.importSettings")}
+                      <input type="file" accept=".json" class="designer-import-file hidden" />
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <% end %>
+          <!-- Items -->
+          <div class="flex-1 overflow-y-auto p-4">
+            <%= if @basket == [] do %>
+              <div class="text-center py-16">
+                <.icon name="hero-shopping-bag" class="size-12 text-base-content/30 mx-auto mb-3" />
+                <p class="text-base-content/70">{t("iconSearch.empty.basket")}</p>
+                <p class="text-sm text-base-content/50 mt-1">{t("iconSearch.empty.basketHint")}</p>
+              </div>
+            <% else %>
+              <%!-- Always the compact grid cards here, regardless of the page's
+                    grid/list view mode — a wide table won't fit the narrow drawer. --%>
+              <div id="basket-popovers" phx-hook="FloatingPopover">
+                <div id="basket-display" phx-hook="IconColorFilter">
+                  <.icon_grid
+                    icons={@basket}
+                    selected_styles={[]}
+                    selected_sizes={[]}
+                    selected_icon_sets={[]}
+                    platform_prefs_by_set={@platform_prefs_by_set}
+                    available_styles={[]}
+                    basket_ids={@basket_ids}
+                    id_prefix="basket-"
+                  />
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
       <!-- Footer -->
       <footer class="border-t border-base-300 bg-base-200/50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -1212,6 +1578,38 @@ defmodule PureAdminIconsWeb.IconSearchLive do
     """
   end
 
+  attr :icon_id, :any, required: true
+  attr :in_basket, :boolean, required: true
+  attr :class, :string, default: nil
+
+  # Small +/✓ toggle that adds/removes an icon from the basket. `onclick`
+  # stops propagation so it doesn't also trigger the card's select_icon.
+  defp basket_toggle(assigns) do
+    ~H"""
+    <button
+      type="button"
+      phx-click="toggle_basket"
+      phx-value-id={@icon_id}
+      title={
+        if @in_basket,
+          do: t("iconSearch.tooltips.removeFromBasket"),
+          else: t("iconSearch.tooltips.addToBasket")
+      }
+      class={[
+        "basket-toggle inline-flex items-center justify-center w-7 h-7 rounded-lg transition-colors shadow-sm border",
+        if(@in_basket,
+          do: "bg-primary text-primary-content border-primary hover:bg-primary/80",
+          else:
+            "bg-base-100/90 text-base-content/40 border-base-300 hover:text-primary hover:bg-base-100"
+        ),
+        @class
+      ]}
+    >
+      <.icon name={if @in_basket, do: "hero-check", else: "hero-plus"} class="size-4" />
+    </button>
+    """
+  end
+
   defp icon_grid(assigns) do
     # Hide style badge if all icons in this result page share the same style
     show_style_badge = assigns.icons |> Enum.map(& &1.style_code) |> Enum.uniq() |> length() > 1
@@ -1223,9 +1621,14 @@ defmodule PureAdminIconsWeb.IconSearchLive do
         <div
           phx-click="select_icon"
           phx-value-id={icon.icon_id}
-          class="icon-card bg-base-200 rounded-lg cursor-pointer flex flex-col"
+          class="icon-card bg-base-200 rounded-lg cursor-pointer flex flex-col relative"
           title={"#{icon.icon_set_code} / #{icon.name}"}
         >
+          <.basket_toggle
+            icon_id={icon.icon_id}
+            in_basket={MapSet.member?(@basket_ids, to_string(icon.icon_id))}
+            class="absolute bottom-2 right-2 z-10"
+          />
           <!-- Top accent bar — colored by icon set, follows the rounded card corners -->
           <div class="h-1.5 w-full rounded-t-lg" style={IconSets.Color.bar_style(icon.icon_set_code)}>
           </div>
@@ -1260,7 +1663,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
             
             <div
               class="icon-card-thumb icon-preview-bg bg-white/80"
-              id={"grid-svg-#{icon.icon_id}"}
+              id={"#{@id_prefix}grid-svg-#{icon.icon_id}"}
               phx-update="ignore"
             >
               <span
@@ -1383,7 +1786,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
           class="bg-base-200 rounded-lg p-3 cursor-pointer hover:bg-base-300 transition-colors border border-base-300"
         >
           <div class="flex items-center gap-2">
-            <div id={"mobile-svg-#{icon.icon_id}"} phx-update="ignore" class="flex-shrink-0">
+            <div id={"#{@id_prefix}mobile-svg-#{icon.icon_id}"} phx-update="ignore" class="flex-shrink-0">
               <span
                 class="icon-card-preview icon-preview-bg inline-svg-icon inline-flex items-center justify-center rounded bg-white/80 p-1.5"
                 style={"width: #{trunc(@icon_list_size * 1.5)}px; height: #{trunc(@icon_list_size * 1.5)}px;"}
@@ -1391,16 +1794,22 @@ defmodule PureAdminIconsWeb.IconSearchLive do
               >
               </span>
             </div>
-            
+
             <div class="flex-1 min-w-0">
               <div class="font-medium text-base-content truncate mb-1">{icon.name}</div>
-              
+
               <div class="flex flex-wrap gap-1 mt-0.5">
                 <span class="badge badge-sm" style={IconSets.Color.badge_style(icon.icon_set_code)}>
                   {icon.icon_set_code}
                 </span> <span class="badge badge-sm badge-neutral capitalize">{icon.style_code}</span>
               </div>
             </div>
+
+            <.basket_toggle
+              icon_id={icon.icon_id}
+              in_basket={MapSet.member?(@basket_ids, to_string(icon.icon_id))}
+              class="flex-shrink-0"
+            />
           </div>
           
           <div class="flex flex-wrap gap-1 mt-1">
@@ -1473,13 +1882,20 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                 class="list-row"
               >
                 <td class="px-4 py-3">
-                  <div id={"list-svg-#{icon.icon_id}"} phx-update="ignore">
-                    <span
-                      class="icon-list-preview icon-preview-bg inline-svg-icon inline-flex items-center justify-center rounded bg-white/80 p-1"
-                      style={"width: #{@icon_list_size}px; height: #{@icon_list_size}px;"}
-                      data-svg-url={Icon.svg_url(icon, default_size(icon.sizes))}
-                    >
-                    </span>
+                  <div class="flex items-center gap-2">
+                    <.basket_toggle
+                      icon_id={icon.icon_id}
+                      in_basket={MapSet.member?(@basket_ids, to_string(icon.icon_id))}
+                      class="flex-shrink-0"
+                    />
+                    <div id={"#{@id_prefix}list-svg-#{icon.icon_id}"} phx-update="ignore">
+                      <span
+                        class="icon-list-preview icon-preview-bg inline-svg-icon inline-flex items-center justify-center rounded bg-white/80 p-1"
+                        style={"width: #{@icon_list_size}px; height: #{@icon_list_size}px;"}
+                        data-svg-url={Icon.svg_url(icon, default_size(icon.sizes))}
+                      >
+                      </span>
+                    </div>
                   </div>
                 </td>
                 

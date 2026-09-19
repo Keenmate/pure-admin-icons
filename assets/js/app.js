@@ -233,6 +233,58 @@ const DesignerExport = {
     return out
   },
 
+  // Apply the current designer settings to an SVG string: recolor fills/strokes,
+  // then wrap the artwork with padding, a background rect, and rounded corners.
+  // Returns SVG text. Shared by the single-icon designer download and the basket
+  // bulk SVG export so both honour identical settings.
+  designSvg(rawSvg, settings) {
+    const { color, bg, padding, radius } = settings || this.getSettings()
+    const parser = new DOMParser()
+    const doc = parser.parseFromString(rawSvg, 'image/svg+xml')
+    const svg = doc.querySelector('svg')
+    if (!svg) return rawSvg
+
+    const vb = svg.getAttribute('viewBox')?.split(/\s+/).map(Number) || [0, 0, 24, 24]
+    const [, , vw, vh] = vb
+
+    if (color) {
+      const colorize = (el) => {
+        const fill = el.getAttribute('fill')
+        if (fill && fill !== 'none') el.setAttribute('fill', color)
+        const stroke = el.getAttribute('stroke')
+        if (stroke && stroke !== 'none') el.setAttribute('stroke', color)
+      }
+      colorize(svg)
+      svg.querySelectorAll('path, circle, rect, line, polyline, polygon, ellipse, g').forEach(colorize)
+    }
+
+    if (bg || padding > 0 || radius > 0) {
+      const pad = padding * Math.max(vw, vh)
+      const newW = vw + pad * 2
+      const newH = vh + pad * 2
+      const r = radius * Math.max(newW, newH) / 2
+
+      const g = doc.createElementNS('http://www.w3.org/2000/svg', 'g')
+      g.setAttribute('transform', `translate(${pad}, ${pad})`)
+      while (svg.firstChild) g.appendChild(svg.firstChild)
+
+      svg.setAttribute('viewBox', `0 0 ${newW} ${newH}`)
+
+      if (bg) {
+        const rect = doc.createElementNS('http://www.w3.org/2000/svg', 'rect')
+        rect.setAttribute('width', newW)
+        rect.setAttribute('height', newH)
+        rect.setAttribute('rx', r)
+        rect.setAttribute('ry', r)
+        rect.setAttribute('fill', bg)
+        svg.appendChild(rect)
+      }
+      svg.appendChild(g)
+    }
+
+    return new XMLSerializer().serializeToString(doc)
+  },
+
   // Intrinsic aspect ratio (w/h) of an SVG string, from its viewBox
   // (falling back to width/height, then 1:1). Canvas drawImage stretches to
   // the destination rect, so non-square icons (e.g. FontAwesome's narrow
@@ -370,6 +422,123 @@ const DesignerExport = {
     URL.revokeObjectURL(a.href)
 
     return sizes
+  },
+
+  // Trigger a browser download for a Blob.
+  _saveBlob(blob, filename) {
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(a.href)
+  },
+
+  // Build a collision-free base filename for a basket item ("{set}__{name}").
+  _basketBaseName(item) {
+    const safe = s => String(s || '').trim().replace(/[^a-z0-9._-]+/gi, '-').replace(/^-+|-+$/g, '')
+    return `${safe(item.set)}__${safe(item.name)}`
+  },
+
+  // Bulk-download the SVGs for every basket item as a single zip, applying the
+  // current designer settings (color/background/padding/corners) to each — the
+  // same transform the single-icon designer uses. With "include colors" off and
+  // no padding/radius, this is the plain original SVG.
+  async downloadSvgZip(items) {
+    if (!window.JSZip || !items || items.length === 0) return
+    const settings = this.getSettings()
+    const designed = !!(settings.color || settings.bg || settings.padding > 0 || settings.radius > 0)
+    const zip = new JSZip()
+    const seen = {}
+    const manifestFiles = []
+
+    for (const item of items) {
+      if (!item.url) continue
+      try {
+        const resp = await fetch(item.url)
+        const rawSvg = await resp.text()
+        const svg = designed ? this.designSvg(rawSvg, settings) : rawSvg
+        let base = this._basketBaseName(item)
+        // De-dupe identical base names within the zip.
+        if (seen[base] != null) { seen[base] += 1; base = `${base}-${seen[base]}` }
+        else { seen[base] = 0 }
+        const filename = `${base}.svg`
+        zip.file(filename, svg)
+        manifestFiles.push({ filename, name: item.name, set: item.set, style: item.style, source_svg: window.location.origin + item.url })
+      } catch (err) {
+        console.error('[BasketExport] SVG fetch failed:', item.url, err)
+      }
+    }
+
+    zip.file('manifest.json', JSON.stringify({
+      generator: 'icons.pureadmin.io — Basket',
+      url: window.location.origin,
+      created: new Date().toISOString(),
+      designed,
+      settings: designed ? {
+        include_colors: settings.includeColors,
+        icon_color: settings.color || 'original',
+        background: settings.bg || 'transparent',
+        padding_percent: Math.round(settings.padding * 100),
+        corner_radius_percent: Math.round(settings.radius * 100)
+      } : null,
+      count: manifestFiles.length,
+      files: manifestFiles
+    }, null, 2))
+
+    const blob = await zip.generateAsync({ type: 'blob' })
+    this._saveBlob(blob, 'pure-admin-icons-svgs.zip')
+  },
+
+  // Bulk-download PNGs for every basket item (all designer sizes) as one zip.
+  async downloadPngZipBatch(items) {
+    if (!window.JSZip || !items || items.length === 0) return
+    const sizes = this.getSizes()
+    if (sizes.length === 0) return
+    const settings = this.getSettings()
+
+    const zip = new JSZip()
+    const seen = {}
+    const manifestFiles = []
+
+    for (const item of items) {
+      if (!item.url) continue
+      try {
+        const resp = await fetch(item.url)
+        const rawSvg = await resp.text()
+        let base = this._basketBaseName(item)
+        if (seen[base] != null) { seen[base] += 1; base = `${base}-${seen[base]}` }
+        else { seen[base] = 0 }
+        for (const size of sizes) {
+          const blob = await this.renderToCanvas(rawSvg, size, settings)
+          const filename = `${base}-${size}.png`
+          zip.file(filename, blob)
+          manifestFiles.push({ filename, name: item.name, set: item.set, size, format: 'png' })
+        }
+      } catch (err) {
+        console.error('[BasketExport] PNG render failed:', item.url, err)
+      }
+    }
+
+    zip.file('manifest.json', JSON.stringify({
+      generator: 'icons.pureadmin.io — Basket',
+      url: window.location.origin,
+      created: new Date().toISOString(),
+      settings: {
+        include_colors: settings.includeColors,
+        icon_color: settings.color || 'original',
+        background: settings.bg || 'transparent',
+        padding_percent: Math.round(settings.padding * 100),
+        corner_radius_percent: Math.round(settings.radius * 100)
+      },
+      sizes,
+      count: items.length,
+      files: manifestFiles
+    }, null, 2))
+
+    const blob = await zip.generateAsync({ type: 'blob' })
+    this._saveBlob(blob, 'pure-admin-icons-pngs.zip')
   }
 }
 
@@ -486,6 +655,10 @@ Hooks.MetricsTracker = {
       localStorage.setItem("icon_filter_sizes", JSON.stringify(sizes))
       localStorage.setItem("icon_filter_icon_sets", JSON.stringify(icon_sets))
     })
+    // Basket persistence — the server pushes the full basket after every change.
+    this.handleEvent("save_basket", ({basket}) => {
+      localStorage.setItem("icon_basket", JSON.stringify(basket || []))
+    })
   }
 }
 
@@ -499,30 +672,55 @@ Hooks.ViewMode = {
   }
 }
 
-// DetailLayout hook — debug logging for the master/detail vs modal detail panel.
-// Attached to #modal-container, which always exists (the inner panel is conditional).
-Hooks.DetailLayout = {
-  xlQuery: window.matchMedia("(min-width: 1280px)"),
-  logState(event) {
-    const hasPanel = !!this.el.querySelector("#icon-modal")
-    const isXl = this.xlQuery.matches
-    const mode = !hasPanel ? "closed" : isXl ? "inline panel (xl)" : "overlay modal (<xl)"
-    console.log(
-      `[DetailLayout] ${event} — panel:${hasPanel ? "open" : "closed"} | ` +
-      `viewport:${window.innerWidth}px | xl(>=1280):${isXl} | mode:${mode}`
-    )
+// Basket bulk actions — SVG/PNG zip downloads (client-side) and the
+// server-pushed "copy all identifiers" clipboard write. The basket item list
+// (name/set/url) is passed in via the element's data-basket attribute.
+Hooks.BasketActions = {
+  items() {
+    try { return JSON.parse(this.el.dataset.basket || '[]') } catch { return [] }
+  },
+  flash(btn) {
+    if (!btn) return
+    const svg = btn.querySelector('svg')
+    if (svg) { svg.style.color = '#22c55e'; setTimeout(() => svg.style.color = '', 1200) }
   },
   mounted() {
-    console.log("[DetailLayout] hook mounted")
-    this.logState("mounted")
-    this._onResize = () => this.logState("resize")
-    window.addEventListener("resize", this._onResize)
-  },
-  updated() {
-    this.logState("updated (icon selected/closed)")
+    this.onClick = async (e) => {
+      const btn = e.target.closest('[data-basket-action]')
+      if (!btn || btn.disabled) return
+      const action = btn.dataset.basketAction
+      const items = this.items()
+      if (items.length === 0) return
+      btn.disabled = true
+      try {
+        if (action === 'svg-zip') await DesignerExport.downloadSvgZip(items)
+        else if (action === 'png-zip') await DesignerExport.downloadPngZipBatch(items)
+        this.flash(btn)
+      } catch (err) {
+        console.error('[BasketActions] export failed:', err)
+      } finally {
+        btn.disabled = false
+      }
+    }
+    this.el.addEventListener('click', this.onClick)
+
+    this.handleEvent('copy_all_ids', ({text}) => {
+      if (!text) return
+      navigator.clipboard.writeText(text).then(() => {
+        const tip = document.createElement('div')
+        tip.textContent = 'Copied!'
+        tip.className = 'fixed z-[100] px-2 py-1 text-xs font-medium rounded bg-success text-success-content shadow-lg pointer-events-none'
+        const rect = this.el.getBoundingClientRect()
+        tip.style.left = `${rect.left + rect.width / 2}px`
+        tip.style.top = `${rect.top}px`
+        tip.style.transform = 'translateX(-50%)'
+        document.body.appendChild(tip)
+        setTimeout(() => tip.remove(), 1200)
+      }).catch(err => console.error('[BasketActions] copy failed:', err))
+    })
   },
   destroyed() {
-    window.removeEventListener("resize", this._onResize)
+    this.el.removeEventListener('click', this.onClick)
   }
 }
 
@@ -1259,6 +1457,10 @@ Hooks.QuickPresets = {
       localStorage.setItem('icon_preview_color', btn.dataset.color)
       localStorage.setItem('icon_preview_bg', JSON.stringify(btn.dataset.bg))
       localStorage.setItem('icon_preview_preset', btn.dataset.preset)
+      // Picking a theme means "apply these colours" — turn colours on so the
+      // preview + downloads actually reflect the chosen background/colour.
+      localStorage.setItem('designer_include_colors', 'true')
+      document.querySelectorAll('.designer-include-colors').forEach(cb => { cb.checked = true })
       window.dispatchEvent(new CustomEvent('iconColorChanged'))
       this.syncTrigger()
       this.closeDropdown()
@@ -1345,6 +1547,31 @@ Hooks.IconSizeSlider = {
 // DownloadDesigner hook — renders a live preview and exports PNGs/SVGs with
 // colors, padding, and rounded corners applied.
 Hooks.DownloadDesigner = {
+  // Push localStorage settings into this instance's controls. Called on mount,
+  // on LiveView re-render (updated), on drawer open, and when any other designer
+  // instance changes a setting — so the basket + modal designers stay in sync
+  // and never lose the user's choices to a re-render.
+  syncControls() {
+    if (this.colorsCheckbox) this.colorsCheckbox.checked = localStorage.getItem('designer_include_colors') !== 'false'
+    if (this.paddingSlider) {
+      this.paddingSlider.value = localStorage.getItem('designer_padding') || '10'
+      if (this.paddingLabel) this.paddingLabel.textContent = this.paddingSlider.value + '%'
+    }
+    if (this.radiusSlider) {
+      this.radiusSlider.value = localStorage.getItem('designer_radius') || '20'
+      if (this.radiusLabel) this.radiusLabel.textContent = this.radiusSlider.value + '%'
+    }
+    const savedSizes = localStorage.getItem('designer_sizes')
+    if (savedSizes) {
+      try {
+        const checked = new Set(JSON.parse(savedSizes))
+        this.el.querySelectorAll('.designer-size').forEach(cb => { cb.checked = checked.has(parseInt(cb.value)) })
+      } catch {}
+    }
+    const customInput = this.el.querySelector('.designer-custom-size')
+    const savedCustomSize = localStorage.getItem('designer_custom_size')
+    if (customInput && savedCustomSize) customInput.value = savedCustomSize
+  },
   mounted() {
     this.canvas = this.el.querySelector('.designer-preview')
     this.ctx = this.canvas?.getContext('2d')
@@ -1356,49 +1583,47 @@ Hooks.DownloadDesigner = {
     this.radiusSlider = this.el.querySelector('.designer-radius')
     this.radiusLabel = this.el.querySelector('.designer-radius-label')
 
-    // Restore saved settings
-    this.colorsCheckbox.checked = localStorage.getItem('designer_include_colors') !== 'false'
-    this.paddingSlider.value = localStorage.getItem('designer_padding') || '10'
-    this.radiusSlider.value = localStorage.getItem('designer_radius') || '20'
-
-    // Load SVG and render initial preview
+    // Restore saved settings then load the SVG and paint the preview.
+    this.syncControls()
     this.loadSvg().then(() => this.renderPreview())
 
-    // Restore saved sizes
-    const savedSizes = localStorage.getItem('designer_sizes')
-    if (savedSizes) {
-      try {
-        const checked = new Set(JSON.parse(savedSizes))
-        this.el.querySelectorAll('.designer-size').forEach(cb => { cb.checked = checked.has(parseInt(cb.value)) })
-      } catch {}
-    }
-    const savedCustomSize = localStorage.getItem('designer_custom_size')
-    if (savedCustomSize) {
-      const input = this.el.querySelector('.designer-custom-size')
-      if (input) input.value = savedCustomSize
-    }
-
-    // Bind controls
+    // Bind controls — persist, repaint, and broadcast so sibling designer
+    // instances (basket ↔ modal) re-sync their controls to match.
     const save = () => {
       localStorage.setItem('designer_include_colors', this.colorsCheckbox.checked)
       localStorage.setItem('designer_padding', this.paddingSlider.value)
       localStorage.setItem('designer_radius', this.radiusSlider.value)
       this.saveSizes()
       this.renderPreview()
+      window.dispatchEvent(new CustomEvent('designerSettingsChanged', { detail: { from: this.el.id } }))
     }
     this.colorsCheckbox.addEventListener('change', save)
     this.paddingSlider.addEventListener('input', () => { this.paddingLabel.textContent = this.paddingSlider.value + '%'; save() })
     this.radiusSlider.addEventListener('input', () => { this.radiusLabel.textContent = this.radiusSlider.value + '%'; save() })
-    this.paddingLabel.textContent = this.paddingSlider.value + '%'
-    this.radiusLabel.textContent = this.radiusSlider.value + '%'
 
     // Save sizes on checkbox/input change
-    this.el.querySelectorAll('.designer-size').forEach(cb => cb.addEventListener('change', () => this.saveSizes()))
-    this.el.querySelector('.designer-custom-size')?.addEventListener('input', () => this.saveSizes())
+    this.el.querySelectorAll('.designer-size').forEach(cb => cb.addEventListener('change', save))
+    this.el.querySelector('.designer-custom-size')?.addEventListener('input', save)
 
     // Listen for color changes from preset combos
-    this._onColorChange = () => this.renderPreview()
+    this._onColorChange = () => { this.syncControls(); this.renderPreview() }
     window.addEventListener('iconColorChanged', this._onColorChange)
+
+    // Re-sync when another designer instance changes a setting (skip our own).
+    this._onSettingsChanged = (e) => {
+      if (e.detail?.from === this.el.id) return
+      this.syncControls()
+      this.renderPreview()
+    }
+    window.addEventListener('designerSettingsChanged', this._onSettingsChanged)
+
+    // The basket designer mounts off-screen (drawer closed) at page load, so its
+    // canvas can be blank and its controls stale. Re-sync + reload on open.
+    this._onBasketOpen = () => {
+      this.syncControls()
+      this.loadSvg().then(() => this.renderPreview())
+    }
+    window.addEventListener('phx:basket_drawer_opened', this._onBasketOpen)
 
     // Download buttons
     this.el.querySelector('.designer-download-png')?.addEventListener('click', () => this.downloadPngZip())
@@ -1426,17 +1651,29 @@ Hooks.DownloadDesigner = {
   },
   destroyed() {
     if (this._onColorChange) window.removeEventListener('iconColorChanged', this._onColorChange)
+    if (this._onBasketOpen) window.removeEventListener('phx:basket_drawer_opened', this._onBasketOpen)
+    if (this._onSettingsChanged) window.removeEventListener('designerSettingsChanged', this._onSettingsChanged)
+  },
+  updated() {
+    // A LiveView re-render can reset client-set form state — re-apply from
+    // localStorage. Reload the SVG when the previewed icon changed (e.g. the
+    // first basket item was removed); otherwise just repaint.
+    this.syncControls()
+    const url = this.el.dataset.svgUrl
+    if (url && url !== this.svgUrl) {
+      this.svgUrl = url
+      this.baseName = (this.el.dataset.name || 'icon').toLowerCase().replace(/\s+/g, '-')
+      this.loadSvg().then(() => this.renderPreview())
+    } else {
+      this.renderPreview()
+    }
   },
   async loadSvg() {
     try {
       const resp = await fetch(this.svgUrl)
       this.rawSvg = await resp.text()
-      console.group(`[DownloadDesigner.loadSvg] ${this.svgUrl}`)
-      console.log('attrs:', extractFillStroke(this.rawSvg))
-      console.log('full rawSvg:', this.rawSvg)
-      console.groupEnd()
     } catch (err) {
-      console.error('[DownloadDesigner] Failed to load SVG:', err)
+      console.error('[DownloadDesigner] Failed to load SVG:', this.svgUrl, err)
     }
   },
   getSettings() {
@@ -1453,10 +1690,6 @@ Hooks.DownloadDesigner = {
 
     const size = 128
     const { color, bg, padding, radius } = this.getSettings()
-    console.group(`[DownloadDesigner.renderPreview] gen=${gen}`)
-    console.log('settings:', { color, bg, padding, radius })
-    console.log('rawSvg fill/stroke attrs:', extractFillStroke(this.rawSvg))
-    console.groupEnd()
     const canvas = this.canvas
     canvas.width = size * 2 // 2x for retina
     canvas.height = size * 2
@@ -1493,26 +1726,10 @@ Hooks.DownloadDesigner = {
     const img = new Image()
     img.onload = () => {
       URL.revokeObjectURL(url)
-      if (gen !== this._renderGen) {
-        console.log(`[renderPreview gen=${gen}] stale — bailed (current=${this._renderGen})`)
-        return
-      }
+      if (gen !== this._renderGen) return
       const pad = padding * s
       const { dx, dy, dw, dh } = DesignerExport.fitContain(aspect, pad, pad, s - pad * 2, s - pad * 2)
       ctx.drawImage(img, dx, dy, dw, dh)
-
-      // Sample pixels so we can see what actually landed on the canvas.
-      try {
-        const center = ctx.getImageData(s / 2, s / 2, 1, 1).data
-        const corner = ctx.getImageData(5, 5, 1, 1).data
-        const mid = ctx.getImageData(s / 4, s / 4, 1, 1).data
-        const px = (p) => `rgba(${p[0]},${p[1]},${p[2]},${(p[3] / 255).toFixed(2)})`
-        console.log(
-          `[renderPreview gen=${gen}] pixels after draw — corner(5,5)=${px(corner)}  mid(${s / 4},${s / 4})=${px(mid)}  center(${s / 2},${s / 2})=${px(center)}`
-        )
-      } catch (e) {
-        console.warn('[renderPreview] getImageData failed:', e.message)
-      }
     }
     img.src = url
   },
@@ -1562,58 +1779,8 @@ Hooks.DownloadDesigner = {
   },
   async downloadSvg() {
     if (!this.rawSvg) return
-    const { color, bg, padding, radius } = this.getSettings()
-    const parser = new DOMParser()
-    const doc = parser.parseFromString(this.rawSvg, 'image/svg+xml')
-    const svg = doc.querySelector('svg')
-    if (!svg) return
-
-    // Get viewBox dimensions
-    const vb = svg.getAttribute('viewBox')?.split(/\s+/).map(Number) || [0, 0, 24, 24]
-    const [vx, vy, vw, vh] = vb
-
-    // Apply colors
-    if (color) {
-      const colorize = (el) => {
-        const fill = el.getAttribute('fill')
-        if (fill && fill !== 'none') el.setAttribute('fill', color)
-        const stroke = el.getAttribute('stroke')
-        if (stroke && stroke !== 'none') el.setAttribute('stroke', color)
-      }
-      colorize(svg)
-      svg.querySelectorAll('path, circle, rect, line, polyline, polygon, ellipse, g').forEach(colorize)
-    }
-
-    // Wrap with padding and background
-    if (bg || padding > 0 || radius > 0) {
-      const pad = padding * Math.max(vw, vh)
-      const newW = vw + pad * 2
-      const newH = vh + pad * 2
-      const r = radius * Math.max(newW, newH) / 2
-
-      // Move original content into a group offset by padding
-      const g = doc.createElementNS('http://www.w3.org/2000/svg', 'g')
-      g.setAttribute('transform', `translate(${pad}, ${pad})`)
-      while (svg.firstChild) g.appendChild(svg.firstChild)
-
-      // Update viewBox
-      svg.setAttribute('viewBox', `0 0 ${newW} ${newH}`)
-
-      // Background rect with rounded corners
-      if (bg) {
-        const rect = doc.createElementNS('http://www.w3.org/2000/svg', 'rect')
-        rect.setAttribute('width', newW)
-        rect.setAttribute('height', newH)
-        rect.setAttribute('rx', r)
-        rect.setAttribute('ry', r)
-        rect.setAttribute('fill', bg)
-        svg.appendChild(rect)
-      }
-      svg.appendChild(g)
-    }
-
-    const serializer = new XMLSerializer()
-    const blob = new Blob([serializer.serializeToString(doc)], { type: 'image/svg+xml' })
+    const designed = DesignerExport.designSvg(this.rawSvg, this.getSettings())
+    const blob = new Blob([designed], { type: 'image/svg+xml' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
     a.download = `${this.baseName}-designed.svg`
@@ -1987,7 +2154,8 @@ const liveSocket = new LiveSocket("/live", Socket, {
     platform_prefs: JSON.parse(localStorage.getItem("icon_platform_prefs") || "{}"),
     filter_styles: JSON.parse(localStorage.getItem("icon_filter_styles") || "[]"),
     filter_sizes: JSON.parse(localStorage.getItem("icon_filter_sizes") || "[]"),
-    filter_icon_sets: JSON.parse(localStorage.getItem("icon_filter_icon_sets") || "[]")
+    filter_icon_sets: JSON.parse(localStorage.getItem("icon_filter_icon_sets") || "[]"),
+    basket: JSON.parse(localStorage.getItem("icon_basket") || "[]")
   },
   hooks: Hooks
 })

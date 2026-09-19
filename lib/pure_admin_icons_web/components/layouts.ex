@@ -22,6 +22,10 @@ defmodule PureAdminIconsWeb.Layouts do
   attr :icon_count, :any, default: nil, doc: "total icon count for the nav summary (optional)"
   attr :set_count, :any, default: nil, doc: "icon-set count for the nav summary (optional)"
 
+  attr :basket_count, :any,
+    default: nil,
+    doc: "number of icons in the basket; when non-nil a basket button is shown (search page only)"
+
   @doc """
   Shared site navigation bar with burger menu on mobile.
 
@@ -80,6 +84,9 @@ defmodule PureAdminIconsWeb.Layouts do
             <.icon name="hero-building-office-2" class="size-4" /> {t("nav.buttons.keenmate")}
           </a>
           <.language_switcher />
+          <%= if @basket_count != nil do %>
+            <.basket_button count={@basket_count} />
+          <% end %>
         </div>
       </div>
       <%!-- Mobile / tablet (below lg) --%>
@@ -90,13 +97,18 @@ defmodule PureAdminIconsWeb.Layouts do
             <span class="hidden sm:inline text-sm text-base-content/60 whitespace-nowrap">(<span class="font-semibold text-primary">{@icon_count}</span> {t("iconSearch.headers.heroTitleMiddle")} <span class="font-semibold text-primary">{@set_count}</span> {t("iconSearch.headers.heroTitleSuffix")})</span>
           <% end %>
         </div>
-        <button
-          type="button"
-          onclick="this.closest('nav').querySelector('[data-mobile-nav]').classList.toggle('hidden')"
-          class="inline-flex items-center justify-center p-2 rounded-lg text-base-content/80 hover:text-primary hover:bg-base-200 transition-colors"
-        >
-          <.icon name="hero-bars-3" class="size-6" />
-        </button>
+        <div class="flex items-center gap-1">
+          <%= if @basket_count != nil do %>
+            <.basket_button count={@basket_count} />
+          <% end %>
+          <button
+            type="button"
+            onclick="this.closest('nav').querySelector('[data-mobile-nav]').classList.toggle('hidden')"
+            class="inline-flex items-center justify-center p-2 rounded-lg text-base-content/80 hover:text-primary hover:bg-base-200 transition-colors"
+          >
+            <.icon name="hero-bars-3" class="size-6" />
+          </button>
+        </div>
       </div>
       <div
         data-mobile-nav
@@ -153,6 +165,31 @@ defmodule PureAdminIconsWeb.Layouts do
         <.language_switcher class="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-base-content/80 hover:bg-base-300 transition-colors" />
       </div>
     </nav>
+    """
+  end
+
+  attr :count, :any, required: true, doc: "number of icons currently in the basket"
+
+  @doc """
+  Basket toggle button with a live count badge. Clicking dispatches
+  `toggle_basket_drawer` to the LiveView, which owns the drawer state.
+  """
+  def basket_button(assigns) do
+    ~H"""
+    <button
+      type="button"
+      phx-click="toggle_basket_drawer"
+      title={t("iconSearch.tooltips.openBasket")}
+      class="relative inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-200 transition-colors"
+    >
+      <.icon name="hero-shopping-bag" class="size-5 lg:size-4" />
+      <span class="hidden lg:inline">{t("iconSearch.headers.basket")}</span>
+      <%= if @count > 0 do %>
+        <span class="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-primary text-primary-content text-[10px] font-bold flex items-center justify-center leading-none">
+          {@count}
+        </span>
+      <% end %>
+    </button>
     """
   end
 
