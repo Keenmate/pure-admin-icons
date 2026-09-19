@@ -31,15 +31,6 @@ defmodule PureAdminIconsWeb.IconSearchLive do
     "background-color: #{bg}; color: #{color};"
   end
 
-  # Compact swatch for the quick-preset bar: shows a half-and-half circle (bg left, color right)
-  defp preset_swatch_style(%{"bg" => "checker", "color" => color}) do
-    "background: linear-gradient(90deg, #e5e7eb 50%, #{color} 50%);"
-  end
-
-  defp preset_swatch_style(%{"bg" => bg, "color" => color}) do
-    "background: linear-gradient(90deg, #{bg} 50%, #{color} 50%);"
-  end
-
   @impl true
   def mount(_params, _session, socket) do
     mount_start = System.monotonic_time()
@@ -608,13 +599,6 @@ defmodule PureAdminIconsWeb.IconSearchLive do
     {:noreply, socket}
   end
 
-  defp atomize_keys(map) do
-    Map.new(map, fn {k, v} ->
-      key = if is_binary(k), do: String.to_existing_atom(k), else: k
-      {key, v}
-    end)
-  end
-
   defp build_path(socket, overrides) do
     query = Keyword.get(overrides, :q, socket.assigns.query)
     styles = Keyword.get(overrides, :styles, socket.assigns.selected_styles)
@@ -727,30 +711,6 @@ defmodule PureAdminIconsWeb.IconSearchLive do
       {:ok, results} -> results
       {:error, _} -> []
     end
-  end
-
-  defp get_total_count(query, assigns) do
-    opts = []
-
-    opts =
-      case assigns.selected_styles do
-        [] -> opts
-        styles -> [{:styles, styles} | opts]
-      end
-
-    opts =
-      case assigns.selected_sizes do
-        [] -> opts
-        sizes -> [{:sizes, sizes} | opts]
-      end
-
-    opts =
-      case assigns.selected_icon_sets do
-        [] -> opts
-        icon_sets -> [{:icon_sets, icon_sets} | opts]
-      end
-
-    Icons.search_count(query, opts)
   end
 
   @impl true
@@ -1071,51 +1031,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                 </span>
               </div>
               
-              <div
-                id="quick-presets"
-                phx-hook="QuickPresets"
-                class="relative"
-                data-presets={Jason.encode!(preview_presets())}
-              >
-                <button type="button" class="quick-preset-trigger btn-pager gap-2">
-                  <span
-                    class="quick-preset-swatch w-4 h-4 rounded-sm border border-base-content/20"
-                    style="background: linear-gradient(135deg, #ffffff 50%, #212121 50%);"
-                  >
-                  </span> <span class="quick-preset-label text-xs">Classic Light</span>
-                  <svg
-                    class="w-3 h-3 text-base-content/50"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </button>
-                <div
-                  class="quick-preset-dropdown hidden py-1 rounded-lg bg-base-100 border border-base-content/20 shadow-xl z-50 w-44 max-h-64 overflow-y-auto"
-                  style="position: fixed; top: 0; left: 0;"
-                >
-                  <%= for preset <- Enum.sort_by(preview_presets(), & &1["label"]) do %>
-                    <button
-                      type="button"
-                      data-preset={preset["key"]}
-                      data-color={preset["color"]}
-                      data-bg={preset["bg"]}
-                      data-label={preset["label"]}
-                      class="quick-preset w-full text-left px-3 py-1.5 text-sm cursor-pointer hover:opacity-80"
-                      style={preset_button_style(preset)}
-                    >
-                      {preset["label"]}
-                    </button>
-                  <% end %>
-                </div>
-              </div>
+              <.quick_presets id="quick-presets" />
                <.pager current_page={@page} total_pages={@total_pages} />
             </div>
           </div>
@@ -1301,41 +1217,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
               <div id="basket-designer-panel" style="display: none;" class="px-4 pb-3 space-y-3">
                 <p class="text-xs text-base-content/50">{t("iconSearch.messages.designerHint")}</p>
                 <!-- Preset / color picker (compact) -->
-                <div
-                  id="basket-quick-presets"
-                  phx-hook="QuickPresets"
-                  class="relative"
-                  data-presets={Jason.encode!(preview_presets())}
-                >
-                  <button type="button" class="quick-preset-trigger btn-pager gap-2">
-                    <span
-                      class="quick-preset-swatch w-4 h-4 rounded-sm border border-base-content/20"
-                      style="background: linear-gradient(135deg, #ffffff 50%, #212121 50%);"
-                    >
-                    </span> <span class="quick-preset-label text-xs">Classic Light</span>
-                    <svg class="w-3 h-3 text-base-content/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-                  <div
-                    class="quick-preset-dropdown hidden py-1 rounded-lg bg-base-100 border border-base-content/20 shadow-xl z-50 w-44 max-h-64 overflow-y-auto"
-                    style="position: fixed; top: 0; left: 0;"
-                  >
-                    <%= for preset <- Enum.sort_by(preview_presets(), & &1["label"]) do %>
-                      <button
-                        type="button"
-                        data-preset={preset["key"]}
-                        data-color={preset["color"]}
-                        data-bg={preset["bg"]}
-                        data-label={preset["label"]}
-                        class="quick-preset w-full text-left px-3 py-1.5 text-sm cursor-pointer hover:opacity-80"
-                        style={preset_button_style(preset)}
-                      >
-                        {preset["label"]}
-                      </button>
-                    <% end %>
-                  </div>
-                </div>
+                <.quick_presets id="basket-quick-presets" />
                 <!-- Designer controls (no per-icon download buttons — the bulk
                      actions above handle downloads). Preview shows the first icon. -->
                 <div
@@ -1532,10 +1414,43 @@ defmodule PureAdminIconsWeb.IconSearchLive do
   # icon_modal extracted to PureAdminIconsWeb.IconModalComponent (LiveComponent)
   # See lib/pure_admin_icons_web/live/icon_modal_component.ex
 
-  defp _old_modal_placeholder do
-    # This block replaces ~570 lines of the old defp icon_modal/1.
-    # Keeping this marker so git blame shows the extraction.
-    nil
+  attr :id, :string, required: true
+
+  # Compact preset/color picker (QuickPresets hook). Rendered in the results
+  # toolbar and the basket designer — pass a unique id per instance.
+  defp quick_presets(assigns) do
+    ~H"""
+    <div id={@id} phx-hook="QuickPresets" class="relative" data-presets={Jason.encode!(preview_presets())}>
+      <button type="button" class="quick-preset-trigger btn-pager gap-2">
+        <span
+          class="quick-preset-swatch w-4 h-4 rounded-sm border border-base-content/20"
+          style="background: linear-gradient(135deg, #ffffff 50%, #212121 50%);"
+        >
+        </span> <span class="quick-preset-label text-xs">Classic Light</span>
+        <svg class="w-3 h-3 text-base-content/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      <div
+        class="quick-preset-dropdown hidden py-1 rounded-lg bg-base-100 border border-base-content/20 shadow-xl z-50 w-44 max-h-64 overflow-y-auto"
+        style="position: fixed; top: 0; left: 0;"
+      >
+        <%= for preset <- Enum.sort_by(preview_presets(), & &1["label"]) do %>
+          <button
+            type="button"
+            data-preset={preset["key"]}
+            data-color={preset["color"]}
+            data-bg={preset["bg"]}
+            data-label={preset["label"]}
+            class="quick-preset w-full text-left px-3 py-1.5 text-sm cursor-pointer hover:opacity-80"
+            style={preset_button_style(preset)}
+          >
+            {preset["label"]}
+          </button>
+        <% end %>
+      </div>
+    </div>
+    """
   end
 
   defp pager(assigns) do
@@ -2040,13 +1955,6 @@ defmodule PureAdminIconsWeb.IconSearchLive do
     Map.get(Icon.platform_ids(icon, "android"), size, "N/A")
   end
 
-  # Get the first N enabled platforms from user preferences
-  defp preferred_platforms(prefs, count) do
-    [:ios, :android, :react, :vue, :svelte, :cssclass, :htmltag, :filename]
-    |> Enum.filter(&Map.get(prefs, &1, false))
-    |> Enum.take(count)
-  end
-
   # Get the first N preferred platforms FOR a specific icon — uses the icon set's
   # own prefs (from platform_prefs_by_set, falling back to defaults) AND filters
   # out platforms the set doesn't actually support (e.g. iOS/Android only exist
@@ -2152,39 +2060,8 @@ defmodule PureAdminIconsWeb.IconSearchLive do
   defp svelte_package(icon), do: Formatter.svelte_package(icon)
   defp vue_package(icon), do: Formatter.vue_package(icon)
   defp cssclass_package(icon), do: Formatter.cssclass_package(icon)
-  defp htmltag_package(icon), do: Formatter.htmltag_package(icon)
   defp ios_package(icon), do: Formatter.ios_package(icon)
   defp android_package(icon), do: Formatter.android_package(icon)
-
-  defp react_identifier_sizes(icon), do: Formatter.react_identifier_sizes(icon)
-  defp svelte_identifier_sizes(icon), do: Formatter.svelte_identifier_sizes(icon)
-  defp vue_identifier_sizes(icon), do: Formatter.vue_identifier_sizes(icon)
-  defp cssclass_identifier_sizes(icon), do: Formatter.cssclass_identifier_sizes(icon)
-  defp htmltag_identifier_sizes(icon), do: Formatter.htmltag_identifier_sizes(icon)
-
-  # Color method display helpers
-  defp color_method_label("fill"), do: "CSS: fill / color"
-  defp color_method_label("stroke"), do: "CSS: stroke / color"
-  defp color_method_label("multicolor"), do: "Multicolor"
-  defp color_method_label(_), do: ""
-
-  defp color_method_class("fill"), do: "bg-blue-100 text-blue-700"
-  defp color_method_class("stroke"), do: "bg-emerald-100 text-emerald-700"
-  defp color_method_class("multicolor"), do: "bg-amber-100 text-amber-700"
-  defp color_method_class(_), do: "bg-base-200 text-base-content/70"
-
-  # Format numbers with k/m suffixes (1000 -> 1k, 3400 -> 3.4k, 1500000 -> 1.5m)
-  defp format_number(n) when n >= 1_000_000 do
-    formatted = Float.round(n / 1_000_000, 1)
-    if formatted == trunc(formatted), do: "#{trunc(formatted)}m", else: "#{formatted}m"
-  end
-
-  defp format_number(n) when n >= 1_000 do
-    formatted = Float.round(n / 1_000, 1)
-    if formatted == trunc(formatted), do: "#{trunc(formatted)}k", else: "#{formatted}k"
-  end
-
-  defp format_number(n), do: to_string(n)
 
   # Format sync timestamp as relative time or date
   defp format_sync_time(nil), do: "Never"

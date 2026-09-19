@@ -226,10 +226,6 @@ const DesignerExport = {
     }
 
     const out = new XMLSerializer().serializeToString(doc)
-    console.group(`[DesignerExport.colorizeSvg] color=${color}`)
-    console.log('before fill/stroke attrs:', extractFillStroke(svgText))
-    console.log('after  fill/stroke attrs:', extractFillStroke(out))
-    console.groupEnd()
     return out
   },
 
@@ -545,11 +541,9 @@ const DesignerExport = {
 // Inline SVG loader with lazy loading, caching, and color support
 Hooks.IconColorFilter = {
   mounted() {
-    console.time('[hook] IconColorFilter.mounted')
     this.svgCache = new Map()
     this.applyPreviewBg()
     this.loadAllSvgs()
-    console.timeEnd('[hook] IconColorFilter.mounted')
     window.addEventListener('iconColorChanged', () => {
       this.updateAllColors()
       this.applyPreviewBg()
@@ -632,15 +626,10 @@ Hooks.IconColorFilter = {
   },
   updateAllColors() {
     const color = localStorage.getItem('icon_preview_color') || '#212121'
-    let count = 0
     this.el.querySelectorAll('.inline-svg-icon').forEach(icon => {
       const svg = icon.querySelector('svg')
-      if (svg) {
-        this.colorizeSvg(svg, color, icon.dataset.svgUrl)
-        count++
-      }
+      if (svg) this.colorizeSvg(svg, color, icon.dataset.svgUrl)
     })
-    console.log(`[IconColorFilter] updateAllColors recolored ${count} icons to ${color}`)
   }
 }
 
@@ -1007,10 +996,6 @@ Hooks.ColorPicker = {
       btn.addEventListener('click', () => {
         const preset = PresetManager.getAll()[btn.dataset.preset]
         if (!preset) return
-        console.group(`[ColorPicker] preset clicked: ${btn.dataset.preset}`)
-        console.log('preset:', preset)
-        console.log('  color →', preset.color, '  bg →', preset.bg)
-        console.groupEnd()
         localStorage.setItem('icon_preview_color', preset.color)
         localStorage.setItem('icon_preview_bg', JSON.stringify(preset.bg))
         localStorage.setItem('icon_preview_preset', btn.dataset.preset)
@@ -1512,13 +1497,11 @@ Hooks.QuickPresets = {
 // IconSizeSlider hook — adjusts icon preview size in list/grid
 Hooks.IconSizeSlider = {
   mounted() {
-    console.time('[hook] IconSizeSlider.mounted')
     this.range = this.el.querySelector('.icon-size-range')
     this.label = this.el.querySelector('.icon-size-label')
     const saved = parseInt(localStorage.getItem('icon_list_size') || '32', 10)
     this.range.value = saved
     this.apply(saved)
-    console.timeEnd('[hook] IconSizeSlider.mounted')
     this.range.addEventListener('input', () => {
       const size = parseInt(this.range.value, 10)
       localStorage.setItem('icon_list_size', size)
@@ -2144,7 +2127,6 @@ window.copyFromButton = function(button) {
   }
 }
 
-console.time('[prefs] LiveSocket init')
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 1500,
   params: {
@@ -2159,17 +2141,10 @@ const liveSocket = new LiveSocket("/live", Socket, {
   },
   hooks: Hooks
 })
-console.timeEnd('[prefs] LiveSocket init')
-console.log('[prefs] connect_params:', {
-  view_mode: localStorage.getItem("icon_view_mode"),
-  icon_list_size: localStorage.getItem("icon_list_size"),
-  filter_icon_sets: localStorage.getItem("icon_filter_icon_sets")
-})
 
 topbar.config({barColors: {0: "#29d"}, shadowColor: "rgba(0, 0, 0, .3)"})
-window.addEventListener("phx:page-loading-start", _info => { console.time('[phx] page-load'); topbar.show(300) })
+window.addEventListener("phx:page-loading-start", _info => topbar.show(300))
 window.addEventListener("phx:page-loading-stop", _info => {
-  console.timeEnd('[phx] page-load')
   topbar.hide()
   // Hide loader after first LiveView connect
   const loader = document.getElementById('app-loader')

@@ -13,7 +13,7 @@ defmodule PureAdminIconsWeb.IconModalComponent do
   alias PureAdminIcons.IconSets.Formatter
 
   import PureAdminIconsWeb.Components.PlatformIcons
-  import PureAdminIcons.Translations, only: [t: 1, t: 2]
+  import PureAdminIcons.Translations, only: [t: 1]
 
   # Load preview presets at compile time (same as parent LiveView)
   @preview_presets :pure_admin_icons
