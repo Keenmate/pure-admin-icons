@@ -431,10 +431,31 @@ const DesignerExport = {
     URL.revokeObjectURL(a.href)
   },
 
-  // Build a collision-free base filename for a basket item ("{set}__{name}").
+  // Base filename (no extension) honouring the "Filename" naming convention
+  // picked in the DownloadNaming <select> (shared via localStorage). "original"
+  // uses the source SVG's own filename; the others transform the icon name.
+  namedBase(name, svgUrl) {
+    const convention = localStorage.getItem('download_naming') || 'original'
+    const n = name || 'icon'
+    const toSnake = s => s.toLowerCase().replace(/\s+/g, '_')
+    const toPascal = s => s.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join('')
+    const toKebab = s => s.toLowerCase().replace(/\s+/g, '-')
+    switch (convention) {
+      case 'kebab': return toKebab(n)
+      case 'snake': return toSnake(n)
+      case 'pascal': return toPascal(n)
+      default: {
+        const file = (svgUrl || '').split('/').pop() || ''
+        return file.replace(/\.[a-z0-9]+$/i, '') || toKebab(n)
+      }
+    }
+  },
+
+  // Basket filename base — applies the naming convention, then sanitises.
+  // Same-named icons across sets are disambiguated by the caller's de-dupe.
   _basketBaseName(item) {
     const safe = s => String(s || '').trim().replace(/[^a-z0-9._-]+/gi, '-').replace(/^-+|-+$/g, '')
-    return `${safe(item.set)}__${safe(item.name)}`
+    return safe(this.namedBase(item.name, item.url))
   },
 
   // Bulk-download the SVGs for every basket item as a single zip, applying the
@@ -1554,6 +1575,8 @@ Hooks.DownloadDesigner = {
     const customInput = this.el.querySelector('.designer-custom-size')
     const savedCustomSize = localStorage.getItem('designer_custom_size')
     if (customInput && savedCustomSize) customInput.value = savedCustomSize
+    const namingSelect = this.el.querySelector('.designer-naming-select')
+    if (namingSelect) namingSelect.value = localStorage.getItem('download_naming') || 'original'
   },
   mounted() {
     this.canvas = this.el.querySelector('.designer-preview')
@@ -1586,6 +1609,12 @@ Hooks.DownloadDesigner = {
     // Save sizes on checkbox/input change
     this.el.querySelectorAll('.designer-size').forEach(cb => cb.addEventListener('change', save))
     this.el.querySelector('.designer-custom-size')?.addEventListener('input', save)
+
+    // Filename naming convention (basket variant) — shared via localStorage,
+    // read by the bulk SVG/PNG exports at download time.
+    this.el.querySelector('.designer-naming-select')?.addEventListener('change', (e) => {
+      localStorage.setItem('download_naming', e.target.value)
+    })
 
     // Listen for color changes from preset combos
     this._onColorChange = () => { this.syncControls(); this.renderPreview() }
@@ -1663,21 +1692,7 @@ Hooks.DownloadDesigner = {
   // Base filename for the designer downloads, honouring the "Filename" naming
   // convention picked in the DownloadNaming <select> (shared via localStorage).
   resolveBaseName() {
-    const convention = localStorage.getItem('download_naming') || 'original'
-    const name = this.el.dataset.name || 'icon'
-    const toSnake = s => s.toLowerCase().replace(/\s+/g, '_')
-    const toPascal = s => s.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join('')
-    const toKebab = s => s.toLowerCase().replace(/\s+/g, '-')
-    switch (convention) {
-      case 'kebab': return toKebab(name)
-      case 'snake': return toSnake(name)
-      case 'pascal': return toPascal(name)
-      default: {
-        // "original": use the source SVG filename (strip path + extension)
-        const file = (this.svgUrl || '').split('/').pop() || ''
-        return file.replace(/\.[a-z0-9]+$/i, '') || toKebab(name)
-      }
-    }
+    return DesignerExport.namedBase(this.el.dataset.name, this.svgUrl)
   },
   renderPreview() {
     if (!this.ctx || !this.rawSvg) return

@@ -176,6 +176,15 @@ defmodule PureAdminIconsWeb.Components.DownloadDesigner do
             />
           </div>
         </div>
+        <label class="flex items-center gap-2 text-xs">
+          <span class="text-base-content/70">{t("iconDetail.labels.filename")}</span>
+          <select class="designer-naming-select select select-xs select-bordered">
+            <option value="original">{t("iconDetail.labels.filenameOriginal")}</option>
+            <option value="kebab">kebab-case</option>
+            <option value="snake">snake_case</option>
+            <option value="pascal">PascalCase</option>
+          </select>
+        </label>
         <.size_controls
           custom_class="w-16"
           row_class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs"
