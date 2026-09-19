@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-19 — v0.2.0 — Master/detail icon view + navbar rework
+
+**Master/detail layout for the icon detail on large screens.** On `xl` (≥1280px) viewports, selecting an icon no longer opens a centered dialog — the results container widens to ~80vw and splits 60/40, with the grid on the left and the icon detail as an inline, sticky panel on the right (own scroll, `max-h: calc(100vh - 3rem)`, no backdrop). Below `xl` the detail keeps its previous behaviour as a fixed overlay modal. This is a single `IconModalComponent` made responsive (`fixed inset-0` by default, `xl:static xl:sticky` inline panel), relocated into the content flow next to the grid; `#modal-container` stays as the stable morphdom anchor. Added a `DetailLayout` JS hook that logs the current panel/viewport/layout-mode to the console for verification across breakpoints.
+
+**Navbar rework.** The horizontal nav now collapses to a burger below `lg` (1024px) instead of `sm` (640px), fixing the cramped/wrapping nav that overflowed the content block on tablet widths. The catalog summary ("Hledat 39781 ikon z 8 sad ikon") moved out of the hero and into the navbar as a parenthetical next to the logo — `icons.pureadmin.io (39781 ikon z 8 sad ikon)` — shown inline on `sm`+ and at the top of the burger menu on phones. `site_nav` gained optional `icon_count`/`set_count` attrs; pages that omit them (docs, stats) render no summary. Links tightened (`px-2.5`, `gap-0.5`) and nav padding reduced (`py-2`).
+
+**Hero slimmed.** With the count line moved to the navbar, the hero drops that row, demotes the MCP prompt to small text, and reduces vertical padding (`py-6` → `py-4`) — reclaiming a large chunk of above-the-fold space.
+
+---
+
 ## 2026-08-13 — Icon Sets docs: show "Last synced" per set
 
 The `/docs/icon-sets` page now shows when each set was last synced. The data already existed (every sync creates a job run tagged with `icon_set_code`, surfaced by `public.get_last_sync`), but the page only loaded `const.get_icon_sets`, whose result carries no timestamp.

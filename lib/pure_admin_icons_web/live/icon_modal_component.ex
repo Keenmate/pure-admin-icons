@@ -30,13 +30,13 @@ defmodule PureAdminIconsWeb.IconModalComponent do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true" phx-window-keydown="close_modal" phx-key="Escape">
-      <!-- Backdrop -->
-      <div class="fixed inset-0 bg-black/60 transition-opacity" phx-click="close_modal"></div>
+    <div class="fixed inset-0 z-50 overflow-y-auto xl:static xl:z-auto xl:overflow-visible" aria-labelledby="modal-title" role="dialog" aria-modal="true" phx-window-keydown="close_modal" phx-key="Escape">
+      <!-- Backdrop (overlay only — hidden in the inline master/detail layout) -->
+      <div class="fixed inset-0 bg-black/60 transition-opacity xl:hidden" phx-click="close_modal"></div>
 
-      <!-- Modal -->
-      <div class="flex min-h-full items-center justify-center p-4">
-        <div class="relative bg-base-200 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <!-- Modal / inline panel -->
+      <div class="flex min-h-full items-center justify-center p-4 xl:block xl:p-0">
+        <div class="relative bg-base-200 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto xl:max-w-none xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:shadow-lg">
           <!-- Close button -->
           <button
             phx-click="close_modal"

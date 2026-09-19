@@ -499,6 +499,33 @@ Hooks.ViewMode = {
   }
 }
 
+// DetailLayout hook — debug logging for the master/detail vs modal detail panel.
+// Attached to #modal-container, which always exists (the inner panel is conditional).
+Hooks.DetailLayout = {
+  xlQuery: window.matchMedia("(min-width: 1280px)"),
+  logState(event) {
+    const hasPanel = !!this.el.querySelector("#icon-modal")
+    const isXl = this.xlQuery.matches
+    const mode = !hasPanel ? "closed" : isXl ? "inline panel (xl)" : "overlay modal (<xl)"
+    console.log(
+      `[DetailLayout] ${event} — panel:${hasPanel ? "open" : "closed"} | ` +
+      `viewport:${window.innerWidth}px | xl(>=1280):${isXl} | mode:${mode}`
+    )
+  },
+  mounted() {
+    console.log("[DetailLayout] hook mounted")
+    this.logState("mounted")
+    this._onResize = () => this.logState("resize")
+    window.addEventListener("resize", this._onResize)
+  },
+  updated() {
+    this.logState("updated (icon selected/closed)")
+  },
+  destroyed() {
+    window.removeEventListener("resize", this._onResize)
+  }
+}
+
 // Platform preferences persistence
 Hooks.PlatformPrefs = {
   mounted() {

@@ -635,20 +635,11 @@ defmodule PureAdminIconsWeb.IconSearchLive do
     <div class="min-h-screen flex flex-col">
       <!-- Hidden element for metrics tracking from JS -->
       <div id="metrics-tracker" phx-hook="MetricsTracker" class="hidden"></div>
-       <Layouts.site_nav /> <%!-- Hero with search and filters --%>
-      <div class="hero-gradient py-6 px-4 border-b border-base-300">
-        <div class="max-w-5xl mx-auto text-center mb-4">
-          <p class="text-base-content/70">
-            {t("iconSearch.headers.heroTitlePrefix")}
-            <span class="font-semibold text-primary">{@icon_count}</span> {t(
-              "iconSearch.headers.heroTitleMiddle"
-            )}
-            <span class="font-semibold text-primary">{length(@icon_sets)}</span> {t(
-              "iconSearch.headers.heroTitleSuffix"
-            )}
-          </p>
-          
-          <p class="text-sm text-base-content/50 mt-1">
+       <Layouts.site_nav icon_count={@icon_count} set_count={length(@icon_sets)} />
+      <%!-- Hero with search and filters --%>
+      <div class="hero-gradient py-4 px-4 border-b border-base-300">
+        <div class="max-w-5xl mx-auto text-center mb-3">
+          <p class="text-sm text-base-content/50">
             {t("iconSearch.messages.mcpPromptPrefix")}
             <a
               href="https://www.npmjs.com/package/@keenmate/pure-admin-icons-mcp"
@@ -904,7 +895,10 @@ defmodule PureAdminIconsWeb.IconSearchLive do
       </div>
        <%!-- Content --%>
       <main class="px-4 py-6 sm:px-6 lg:px-8 flex-1">
-        <div class="mx-auto max-w-7xl">
+        <div class={[
+          "mx-auto transition-[max-width] duration-200",
+          if(@selected_icon, do: "max-w-7xl xl:max-w-[80vw]", else: "max-w-7xl")
+        ]}>
           <!-- Results Count, Icon Size Slider & Pager -->
           <div class="flex flex-wrap justify-between items-center mb-4 gap-3">
             <div class="text-sm text-base-content/70">
@@ -997,6 +991,10 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                <.pager current_page={@page} total_pages={@total_pages} />
             </div>
           </div>
+          <!-- Master/detail split: on xl the detail panel sits inline beside the grid;
+               below xl it renders as a fixed overlay modal (see #modal-container). -->
+          <div class="xl:flex xl:gap-6 xl:items-start">
+            <div class={["min-w-0", if(@selected_icon, do: "xl:w-3/5", else: "w-full")]}>
           <!-- Icon Display (Grid or List) - Both rendered, CSS controls visibility -->
           <div id="icon-display-popovers" phx-hook="FloatingPopover">
             <div id="icon-display" phx-hook="IconColorFilter">
@@ -1049,6 +1047,22 @@ defmodule PureAdminIconsWeb.IconSearchLive do
               <p class="text-sm text-base-content/50 mt-1">{t("iconSearch.empty.noResultsHint")}</p>
             </div>
           <% end %>
+            </div>
+            <!-- Icon Detail (LiveComponent — isolated render cycle).
+                 Stable #modal-container prevents morphdom sibling mismatch when it appears/disappears.
+                 Inline 40% panel on xl; fixed overlay modal below xl (positioning is inside the component). -->
+            <div id="modal-container" phx-hook="DetailLayout" class={if(@selected_icon, do: "xl:w-2/5 xl:flex-shrink-0")}>
+              <%= if @selected_icon do %>
+                <.live_component
+                  module={PureAdminIconsWeb.IconModalComponent}
+                  id="icon-modal"
+                  icon={@selected_icon}
+                  platform_prefs={@platform_prefs}
+                  metrics={@icon_metrics}
+                />
+              <% end %>
+            </div>
+          </div>
         </div>
       </main>
       <!-- Footer -->
@@ -1145,19 +1159,6 @@ defmodule PureAdminIconsWeb.IconSearchLive do
           </div>
         </div>
       </footer>
-      <!-- Icon Detail Modal (LiveComponent — isolated render cycle).
-           Stable container prevents morphdom sibling mismatch when modal appears/disappears. -->
-      <div id="modal-container">
-        <%= if @selected_icon do %>
-          <.live_component
-            module={PureAdminIconsWeb.IconModalComponent}
-            id="icon-modal"
-            icon={@selected_icon}
-            platform_prefs={@platform_prefs}
-            metrics={@icon_metrics}
-          />
-        <% end %>
-      </div>
     </div>
     """
   end

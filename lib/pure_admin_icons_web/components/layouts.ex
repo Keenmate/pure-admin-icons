@@ -19,44 +19,55 @@ defmodule PureAdminIconsWeb.Layouts do
     """
   end
 
+  attr :icon_count, :any, default: nil, doc: "total icon count for the nav summary (optional)"
+  attr :set_count, :any, default: nil, doc: "icon-set count for the nav summary (optional)"
+
   @doc """
   Shared site navigation bar with burger menu on mobile.
+
+  Pass `icon_count`/`set_count` to render the catalog summary inline (used on the
+  search page). Other pages omit them and no summary is shown.
   """
   def site_nav(assigns) do
     ~H"""
-    <nav class="relative px-4 sm:px-6 lg:px-8 py-3">
-      <%!-- Desktop nav --%>
-      <div class="hidden sm:flex items-center justify-between gap-2">
-        <.logo class="text-lg" />
-        <div class="flex items-center gap-2">
+    <nav class="relative px-4 sm:px-6 lg:px-8 py-2">
+      <%!-- Desktop nav (lg and up) --%>
+      <div class="hidden lg:flex items-center justify-between gap-3">
+        <div class="flex items-baseline gap-1.5 min-w-0">
+          <.logo class="text-lg" />
+          <%= if @icon_count do %>
+            <span class="text-sm text-base-content/60 whitespace-nowrap">(<span class="font-semibold text-primary">{@icon_count}</span> {t("iconSearch.headers.heroTitleMiddle")} <span class="font-semibold text-primary">{@set_count}</span> {t("iconSearch.headers.heroTitleSuffix")})</span>
+          <% end %>
+        </div>
+        <div class="flex items-center gap-0.5">
           <a
             href="/docs"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-200 transition-colors"
+            class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-200 transition-colors"
           >
             <.icon name="hero-book-open" class="size-4" /> {t("nav.buttons.docs")}
           </a>
           <a
             href="/docs/icon-sets"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-200 transition-colors"
+            class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-200 transition-colors"
           >
             <.icon name="hero-squares-2x2" class="size-4" /> {t("nav.buttons.iconSets")}
           </a>
           <a
             href="/docs/api"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-200 transition-colors"
+            class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-200 transition-colors"
           >
             <.icon name="hero-code-bracket" class="size-4" /> {t("nav.buttons.api")}
           </a>
           <a
             href="/stats"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-200 transition-colors"
+            class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-200 transition-colors"
           >
             <.icon name="hero-chart-bar" class="size-4" /> {t("nav.buttons.stats")}
           </a>
           <a
             href="https://pureadmin.io"
             target="_blank"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-200 transition-colors"
+            class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-200 transition-colors"
           >
             <.icon name="hero-swatch" class="size-4" /> {t("nav.buttons.themes")}
           </a>
@@ -64,16 +75,21 @@ defmodule PureAdminIconsWeb.Layouts do
             href="https://keenmate.com"
             target="_blank"
             rel="noreferrer"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-200 transition-colors"
+            class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-200 transition-colors"
           >
             <.icon name="hero-building-office-2" class="size-4" /> {t("nav.buttons.keenmate")}
           </a>
           <.language_switcher />
         </div>
       </div>
-      <%!-- Mobile --%>
-      <div class="flex sm:hidden items-center justify-between">
-        <.logo class="text-lg" />
+      <%!-- Mobile / tablet (below lg) --%>
+      <div class="flex lg:hidden items-center justify-between gap-2">
+        <div class="flex items-baseline gap-1.5 min-w-0">
+          <.logo class="text-lg" />
+          <%= if @icon_count do %>
+            <span class="hidden sm:inline text-sm text-base-content/60 whitespace-nowrap">(<span class="font-semibold text-primary">{@icon_count}</span> {t("iconSearch.headers.heroTitleMiddle")} <span class="font-semibold text-primary">{@set_count}</span> {t("iconSearch.headers.heroTitleSuffix")})</span>
+          <% end %>
+        </div>
         <button
           type="button"
           onclick="this.closest('nav').querySelector('[data-mobile-nav]').classList.toggle('hidden')"
@@ -84,8 +100,17 @@ defmodule PureAdminIconsWeb.Layouts do
       </div>
       <div
         data-mobile-nav
-        class="hidden sm:hidden mt-2 rounded-xl bg-base-200 border border-base-300 p-2 flex flex-col gap-1"
+        class="hidden lg:hidden mt-2 rounded-xl bg-base-200 border border-base-300 p-2 flex flex-col gap-1"
       >
+        <%= if @icon_count do %>
+          <div class="sm:hidden px-3 py-2 text-sm text-base-content/60 border-b border-base-300 mb-1">
+            {t("iconSearch.headers.heroTitlePrefix")}
+            <span class="font-semibold text-primary">{@icon_count}</span>
+            {t("iconSearch.headers.heroTitleMiddle")}
+            <span class="font-semibold text-primary">{@set_count}</span>
+            {t("iconSearch.headers.heroTitleSuffix")}
+          </div>
+        <% end %>
         <a
           href="/docs"
           class="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-300 transition-colors"
