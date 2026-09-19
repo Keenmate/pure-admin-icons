@@ -27,10 +27,10 @@ defmodule PureAdminIconsWeb.IconSearchLive do
     view_mode = connect_params["view_mode"] || "grid"
     icon_list_size = connect_params["icon_list_size"] || 32
 
-    # Per-icon-set platform prefs: %{icon_set_code => %{platform => bool}}
-    # Migration: if old shape (flat map) exists, treat it as the default for all sets
-    raw_prefs = connect_params["platform_prefs"] || %{}
-    platform_prefs_by_set = parse_platform_prefs(raw_prefs)
+    # Global platform prefs: %{platform => bool}. Which identifiers the user wants
+    # shown is a single preference across all sets — per-set *availability* is
+    # handled separately by `platform_supported?/2`.
+    platform_prefs = parse_platform_prefs(connect_params["platform_prefs"] || %{})
 
     # Basket: restore the list of picked icons from localStorage (via connect params).
     # Stored as full icon maps so the drawer can render + bulk-download without a DB hit.
@@ -68,8 +68,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
       |> assign(icon_sets: icon_sets)
       |> assign(all_styles: all_styles)
       |> assign(all_sizes: all_sizes)
-      |> assign(platform_prefs_by_set: platform_prefs_by_set)
-      |> assign(platform_prefs: default_platform_prefs())
+      |> assign(platform_prefs: platform_prefs)
       |> assign(view_mode: view_mode)
       |> assign(icon_list_size: icon_list_size)
       |> assign(last_sync_at: last_sync_at)
@@ -301,15 +300,15 @@ defmodule PureAdminIconsWeb.IconSearchLive do
   defp to_known_atom(_), do: nil
 
   # Build a plain-text block listing every basket icon's platform identifiers,
-  # using each icon set's enabled + supported platforms.
-  defp build_copy_all_text(basket, prefs_by_set) do
+  # using the enabled + set-supported platforms.
+  defp build_copy_all_text(basket, prefs) do
     basket
     |> Enum.map(fn icon ->
       header = "#{icon.name} (#{icon.icon_set_code}/#{icon.style_code})"
 
       lines =
         icon
-        |> preferred_platforms_for(prefs_by_set, 8)
+        |> preferred_platforms_for(prefs, 8)
         |> Enum.map(fn platform -> "  #{platform}: #{get_platform_id(icon, platform)}" end)
 
       Enum.join([header | lines], "\n")
@@ -427,13 +426,8 @@ defmodule PureAdminIconsWeb.IconSearchLive do
 
     # Fetch metrics for this icon (from raw table, fast enough for single icon)
     metrics = if icon, do: Icons.icon_metrics(icon.icon_id), else: %{}
-    # Load this icon set's prefs (or defaults)
-    prefs =
-      if icon,
-        do: prefs_for_set(socket.assigns.platform_prefs_by_set, icon.icon_set_code),
-        else: default_platform_prefs()
 
-    {:noreply, assign(socket, selected_icon: icon, icon_metrics: metrics, platform_prefs: prefs)}
+    {:noreply, assign(socket, selected_icon: icon, icon_metrics: metrics)}
   end
 
   def handle_event("close_modal", _params, socket) do
@@ -474,31 +468,20 @@ defmodule PureAdminIconsWeb.IconSearchLive do
   end
 
   def handle_event("copy_all_identifiers", _params, socket) do
-    text = build_copy_all_text(socket.assigns.basket, socket.assigns.platform_prefs_by_set)
+    text = build_copy_all_text(socket.assigns.basket, socket.assigns.platform_prefs)
     {:noreply, push_event(socket, "copy_all_ids", %{text: text})}
   end
 
   def handle_event("toggle_platform", %{"platform" => platform}, socket) do
-    icon = socket.assigns.selected_icon
+    key = String.to_existing_atom(platform)
+    new_prefs = Map.update!(socket.assigns.platform_prefs, key, &(!&1))
 
-    if icon do
-      prefs = socket.assigns.platform_prefs
-      key = String.to_existing_atom(platform)
-      new_prefs = Map.update!(prefs, key, &(!&1))
+    socket =
+      socket
+      |> assign(:platform_prefs, new_prefs)
+      |> push_event("save_platform_prefs", new_prefs)
 
-      # Update per-set storage
-      new_by_set = Map.put(socket.assigns.platform_prefs_by_set, icon.icon_set_code, new_prefs)
-
-      socket =
-        socket
-        |> assign(:platform_prefs, new_prefs)
-        |> assign(:platform_prefs_by_set, new_by_set)
-        |> push_event("save_platform_prefs", new_by_set)
-
-      {:noreply, socket}
-    else
-      {:noreply, socket}
-    end
+    {:noreply, socket}
   end
 
   def handle_event("toggle_view", %{"mode" => mode}, socket) do
@@ -623,37 +606,35 @@ defmodule PureAdminIconsWeb.IconSearchLive do
     }
   end
 
-  # Get prefs for a specific icon set, falling back to defaults
-  defp prefs_for_set(prefs_by_set, icon_set_code) do
-    case Map.get(prefs_by_set, icon_set_code) do
-      nil -> default_platform_prefs()
-      prefs -> Map.merge(default_platform_prefs(), prefs)
-    end
+  # Parse the platform_prefs from connect_params into a single global map,
+  # merged over defaults. Accepts the current flat shape (%{platform => bool})
+  # and migrates the legacy per-set shape (%{set => %{platform => bool}}) by
+  # collapsing it — a platform stays enabled if it was enabled in any set.
+  defp parse_platform_prefs(raw) when is_map(raw) and map_size(raw) == 0 do
+    default_platform_prefs()
   end
-
-  # Parse the platform_prefs from connect_params.
-  # Supports both new shape (%{set => prefs}) and legacy flat shape (%{platform => bool}).
-  defp parse_platform_prefs(raw) when is_map(raw) and map_size(raw) == 0, do: %{}
 
   defp parse_platform_prefs(raw) when is_map(raw) do
-    # Detect legacy shape: top-level keys are platform names (ios/android/...) not set codes
-    legacy_keys = ["ios", "android", "react", "vue", "svelte", "cssclass", "htmltag", "filename"]
-    is_legacy = raw |> Map.keys() |> Enum.any?(&(&1 in legacy_keys))
+    platform_keys = ["ios", "android", "react", "vue", "svelte", "cssclass", "htmltag", "filename"]
+    is_flat = raw |> Map.keys() |> Enum.any?(&(&1 in platform_keys))
 
-    if is_legacy do
-      # Migrate flat shape: apply to all known sets
-      flat = atomize_pref_values(raw)
+    flat =
+      if is_flat do
+        atomize_pref_values(raw)
+      else
+        # Legacy per-set shape: OR every set's prefs together.
+        raw
+        |> Map.values()
+        |> Enum.map(&atomize_pref_values/1)
+        |> Enum.reduce(%{}, fn prefs, acc ->
+          Map.merge(acc, prefs, fn _k, a, b -> a or b end)
+        end)
+      end
 
-      ["fluentui", "fontawesome", "heroicons", "lucide", "tabler"]
-      |> Enum.map(fn set -> {set, flat} end)
-      |> Map.new()
-    else
-      # New shape: %{set => prefs}
-      Map.new(raw, fn {set, prefs} -> {set, atomize_pref_values(prefs)} end)
-    end
+    Map.merge(default_platform_prefs(), flat)
   end
 
-  defp parse_platform_prefs(_), do: %{}
+  defp parse_platform_prefs(_), do: default_platform_prefs()
 
   defp atomize_pref_values(prefs) when is_map(prefs) do
     Map.new(prefs, fn {k, v} ->
@@ -1038,7 +1019,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                       selected_styles={@selected_styles}
                       selected_sizes={@selected_sizes}
                       selected_icon_sets={@selected_icon_sets}
-                      platform_prefs_by_set={@platform_prefs_by_set}
+                      platform_prefs={@platform_prefs}
                       available_styles={@available_styles}
                       basket_ids={@basket_ids}
                       id_prefix=""
@@ -1048,7 +1029,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                   <div class="view-list">
                     <.icon_list
                       icons={@icons}
-                      platform_prefs_by_set={@platform_prefs_by_set}
+                      platform_prefs={@platform_prefs}
                       selected_sizes={@selected_sizes}
                       available_sizes={@available_sizes}
                       icon_list_size={@icon_list_size}
@@ -1155,30 +1136,30 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                 type="button"
                 data-basket-action="svg-zip"
                 disabled={@basket == []}
-                class="btn-action flex-col gap-1 py-2 h-auto text-xs disabled:opacity-40 disabled:pointer-events-none"
+                class="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-base-300 text-sm font-medium hover:bg-base-200 transition-colors cursor-pointer disabled:opacity-40 disabled:pointer-events-none"
                 title={t("iconSearch.buttons.downloadSvgZip")}
               >
-                <.icon name="hero-arrow-down-tray" class="size-5" />
+                <.icon name="hero-arrow-down-tray" class="size-4 shrink-0" />
                 <span>SVG</span>
               </button>
               <button
                 type="button"
                 data-basket-action="png-zip"
                 disabled={@basket == []}
-                class="btn-action flex-col gap-1 py-2 h-auto text-xs disabled:opacity-40 disabled:pointer-events-none"
+                class="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-base-300 text-sm font-medium hover:bg-base-200 transition-colors cursor-pointer disabled:opacity-40 disabled:pointer-events-none"
                 title={t("iconSearch.buttons.downloadPngZip")}
               >
-                <.icon name="hero-photo" class="size-5" />
+                <.icon name="hero-photo" class="size-4 shrink-0" />
                 <span>PNG</span>
               </button>
               <button
                 type="button"
                 phx-click="copy_all_identifiers"
                 disabled={@basket == []}
-                class="btn-action flex-col gap-1 py-2 h-auto text-xs disabled:opacity-40 disabled:pointer-events-none"
+                class="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-base-300 text-sm font-medium hover:bg-base-200 transition-colors cursor-pointer disabled:opacity-40 disabled:pointer-events-none"
                 title={t("iconSearch.buttons.copyAllIds")}
               >
-                <.icon name="hero-clipboard-document" class="size-5" />
+                <.icon name="hero-clipboard-document" class="size-4 shrink-0" />
                 <span>IDs</span>
               </button>
             </div>
@@ -1247,7 +1228,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                     selected_styles={[]}
                     selected_sizes={[]}
                     selected_icon_sets={[]}
-                    platform_prefs_by_set={@platform_prefs_by_set}
+                    platform_prefs={@platform_prefs}
                     available_styles={[]}
                     basket_ids={@basket_ids}
                     id_prefix="basket-"
@@ -1550,7 +1531,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                 >
                   ∞
                   <div class="floating-popover">
-                    <%= for platform <- preferred_platforms_for(icon, @platform_prefs_by_set, 2) do %>
+                    <%= for platform <- preferred_platforms_for(icon, @platform_prefs, 2) do %>
                       <button
                         type="button"
                         class={["floating-popover-btn", platform_color(platform)]}
@@ -1587,7 +1568,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                   <div class="has-popover">
                     {size}px
                     <div class="floating-popover">
-                      <%= for platform <- preferred_platforms_for(icon, @platform_prefs_by_set, 2) do %>
+                      <%= for platform <- preferred_platforms_for(icon, @platform_prefs, 2) do %>
                         <button
                           type="button"
                           class={["floating-popover-btn", platform_color(platform)]}
@@ -1793,7 +1774,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                     >
                       {t("common.labels.scalable")}
                       <div class="floating-popover">
-                        <%= for platform <- preferred_platforms_for(icon, @platform_prefs_by_set, 2) do %>
+                        <%= for platform <- preferred_platforms_for(icon, @platform_prefs, 2) do %>
                           <button
                             type="button"
                             class={["floating-popover-btn", platform_color(platform)]}
@@ -1836,7 +1817,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                         <div class="has-popover inline-block text-success font-black text-lg">
                           ✓
                           <div class="floating-popover">
-                            <%= for platform <- preferred_platforms_for(icon, @platform_prefs_by_set, 2) do %>
+                            <%= for platform <- preferred_platforms_for(icon, @platform_prefs, 2) do %>
                               <button
                                 type="button"
                                 class={["floating-popover-btn", platform_color(platform)]}
@@ -1912,14 +1893,11 @@ defmodule PureAdminIconsWeb.IconSearchLive do
     Map.get(Icon.platform_ids(icon, "android"), size, "N/A")
   end
 
-  # Get the first N preferred platforms FOR a specific icon — uses the icon set's
-  # own prefs (from platform_prefs_by_set, falling back to defaults) AND filters
-  # out platforms the set doesn't actually support (e.g. iOS/Android only exist
-  # for FluentUI). Used by grid/list popovers so each icon shows only the
-  # platforms relevant to its own icon set.
-  defp preferred_platforms_for(icon, prefs_by_set, count) do
-    prefs = prefs_for_set(prefs_by_set, icon.icon_set_code)
-
+  # Get the first N preferred platforms FOR a specific icon — uses the global
+  # user prefs AND filters out platforms the set doesn't actually support (e.g.
+  # iOS/Android only exist for FluentUI). Used by grid/list popovers so each icon
+  # shows only the platforms it's both enabled for and its set supports.
+  defp preferred_platforms_for(icon, prefs, count) do
     [:ios, :android, :react, :vue, :svelte, :cssclass, :htmltag, :filename]
     |> Enum.filter(&Map.get(prefs, &1, false))
     |> Enum.filter(&platform_supported?(icon, &1))

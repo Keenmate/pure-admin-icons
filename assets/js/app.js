@@ -1636,6 +1636,14 @@ Hooks.DownloadDesigner = {
     }
     window.addEventListener('phx:basket_drawer_opened', this._onBasketOpen)
 
+    // The modal designer is collapsed by default, so it mounts hidden — repaint
+    // when its show/hide panel is toggled open (same blank-canvas fix as above).
+    this._onPanelToggled = () => {
+      this.syncControls()
+      this.loadSvg().then(() => this.renderPreview())
+    }
+    this.el.addEventListener('designer:panel-toggled', this._onPanelToggled)
+
     // Download buttons
     this.el.querySelector('.designer-download-png')?.addEventListener('click', () => this.downloadPngZip())
     this.el.querySelector('.designer-download-svg')?.addEventListener('click', () => this.downloadSvg())
@@ -1664,6 +1672,7 @@ Hooks.DownloadDesigner = {
     if (this._onColorChange) window.removeEventListener('iconColorChanged', this._onColorChange)
     if (this._onBasketOpen) window.removeEventListener('phx:basket_drawer_opened', this._onBasketOpen)
     if (this._onSettingsChanged) window.removeEventListener('designerSettingsChanged', this._onSettingsChanged)
+    if (this._onPanelToggled) this.el.removeEventListener('designer:panel-toggled', this._onPanelToggled)
   },
   updated() {
     // A LiveView re-render can reset client-set form state — re-apply from

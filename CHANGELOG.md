@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-09-19 — v0.3.0 — Icon basket + designer/detail polish
+
+**Icon basket.** New basket for collecting icons across sets and pages. A shopping-bag button in the navbar (with a live count) opens a right-side drawer that renders the picked icons in the same grid/list cards as the search results. Each card gained an add/remove toggle — a rounded-square `+`/`✓` in the bottom-right corner, aligned to the card's radius. The basket offers three bulk actions — download all as an SVG `.zip`, download all as a PNG `.zip`, and copy every icon's platform identifiers to the clipboard — plus a collapsible Download Designer panel so theme colour, background, padding, corner radius, plain-vs-colorized SVG, sizes and the filename-naming convention all apply to the bulk exports. The basket is persisted in `localStorage` as lightweight icon maps and restored via connect params, so it survives reloads and works across pages without a DB round-trip.
+
+**Shared designer/preset code.** Extracted the preview colour presets and the Download Designer markup that the search page, icon detail modal and basket had been duplicating: `PureAdminIconsWeb.PreviewPresets` (loaded from `priv/preview_presets.json` at compile time) and a `DownloadDesigner` function component with `:modal` and `:compact` variants sharing one `.designer-*` class contract with the JS hook. Also dropped a batch of dead code and dev console logging.
+
+**Global platform preferences (fix).** Platform-identifier preferences (iOS/Android/React/Vue/Svelte/CSS class/HTML tag/filename) were being stored *per icon set*, so toggling React off while viewing a FluentUI icon didn't carry over when you opened a Lucide icon. Preferences are now a single global choice; which platforms a given set actually offers is still filtered per set (via `platform_supported?/2`). Legacy per-set data in `localStorage` is migrated by OR-ing every set's choices together.
+
+**Collapsible Download Designer in the detail panel.** The Download Designer in the icon detail is now collapsed by default behind a show/hide header (matching the basket), reclaiming vertical space. Expanding it repaints the preview so the canvas is never blank on first open.
+
+**Basket action buttons.** Restyled the drawer's SVG/PNG/IDs actions as proper bordered buttons (icon + short label, full description on hover) instead of bare stacked icons that read as ambiguous glyphs.
+
+---
+
 ## 2026-09-19 — v0.2.0 — Master/detail icon view + navbar rework
 
 **Master/detail layout for the icon detail on large screens.** On `xl` (≥1280px) viewports, selecting an icon no longer opens a centered dialog — the results container widens to ~80vw and splits 60/40, with the grid on the left and the icon detail as an inline, sticky panel on the right (own scroll, `max-h: calc(100vh - 3rem)`, no backdrop). Below `xl` the detail keeps its previous behaviour as a fixed overlay modal. This is a single `IconModalComponent` made responsive (`fixed inset-0` by default, `xl:static xl:sticky` inline panel), relocated into the content flow next to the grid; `#modal-container` stays as the stable morphdom anchor. Added a `DetailLayout` JS hook that logs the current panel/viewport/layout-mode to the console for verification across breakpoints.

@@ -391,17 +391,41 @@ defmodule PureAdminIconsWeb.IconModalComponent do
               <% end %>
             </div>
 
-            <!-- Download Designer -->
-            <.download_designer
-              variant={:modal}
-              id={"download-designer-#{@icon.icon_id}"}
-              name={@icon.name}
-              svg_url={
-                if Map.get(@icon, :has_single_source, false),
-                  do: Icon.svg_url(@icon, 0),
-                  else: Icon.svg_url(@icon, List.first(@icon.sizes))
-              }
-            />
+            <!-- Download Designer (collapsible — hidden by default to save space) -->
+            <div class="mb-6">
+              <button
+                type="button"
+                phx-click={
+                  JS.toggle(
+                    to: "#detail-designer-panel-#{@icon.icon_id}",
+                    in: "fade-in-scale",
+                    out: "fade-out-scale"
+                  )
+                  |> JS.dispatch("designer:panel-toggled",
+                    to: "#download-designer-#{@icon.icon_id}"
+                  )
+                }
+                class="w-full flex items-center justify-between py-2 text-sm font-medium text-base-content hover:text-base-content/80 transition-colors"
+              >
+                <span class="inline-flex items-center gap-1.5">
+                  <.icon name="hero-swatch" class="size-4" />
+                  {t("iconDetail.headers.downloadDesigner")}
+                </span>
+                <.icon name="hero-chevron-down" class="size-4" />
+              </button>
+              <div id={"detail-designer-panel-#{@icon.icon_id}"} style="display: none;" class="mt-2">
+                <.download_designer
+                  variant={:modal}
+                  id={"download-designer-#{@icon.icon_id}"}
+                  name={@icon.name}
+                  svg_url={
+                    if Map.get(@icon, :has_single_source, false),
+                      do: Icon.svg_url(@icon, 0),
+                      else: Icon.svg_url(@icon, List.first(@icon.sizes))
+                  }
+                />
+              </div>
+            </div>
 
             <!-- Platform Identifiers -->
             <div class="space-y-4">

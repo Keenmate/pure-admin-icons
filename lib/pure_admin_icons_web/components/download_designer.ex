@@ -9,8 +9,9 @@ defmodule PureAdminIconsWeb.Components.DownloadDesigner do
 
   Two variants:
 
-    * `:modal`   — full block with heading + per-icon PNG/SVG download buttons
-      (icon detail modal), canvas + controls side by side.
+    * `:modal`   — full block with per-icon PNG/SVG download buttons (icon detail
+      modal), canvas + controls side by side. The heading + show/hide toggle are
+      supplied by the caller (see IconModalComponent).
     * `:compact` — stacked, full-width sliders, no per-icon download buttons
       (basket drawer — bulk SVG/PNG actions live in the drawer header).
   """
@@ -25,10 +26,7 @@ defmodule PureAdminIconsWeb.Components.DownloadDesigner do
 
   def download_designer(%{variant: :modal} = assigns) do
     ~H"""
-    <div class="mb-6" id={@id} phx-hook="DownloadDesigner" data-name={@name} data-svg-url={@svg_url}>
-      <h3 class="text-sm font-medium text-base-content mb-3">
-        {t("iconDetail.headers.downloadDesigner")}
-      </h3>
+    <div id={@id} phx-hook="DownloadDesigner" data-name={@name} data-svg-url={@svg_url}>
       <div class="bg-base-100 rounded-lg p-4 space-y-4">
         <div class="flex gap-4">
           <!-- Live preview -->
