@@ -1559,7 +1559,6 @@ Hooks.DownloadDesigner = {
     this.canvas = this.el.querySelector('.designer-preview')
     this.ctx = this.canvas?.getContext('2d')
     this.svgUrl = this.el.dataset.svgUrl
-    this.baseName = (this.el.dataset.name || 'icon').toLowerCase().replace(/\s+/g, '-')
     this.colorsCheckbox = this.el.querySelector('.designer-include-colors')
     this.paddingSlider = this.el.querySelector('.designer-padding')
     this.paddingLabel = this.el.querySelector('.designer-padding-label')
@@ -1645,7 +1644,6 @@ Hooks.DownloadDesigner = {
     const url = this.el.dataset.svgUrl
     if (url && url !== this.svgUrl) {
       this.svgUrl = url
-      this.baseName = (this.el.dataset.name || 'icon').toLowerCase().replace(/\s+/g, '-')
       this.loadSvg().then(() => this.renderPreview())
     } else {
       this.renderPreview()
@@ -1661,6 +1659,25 @@ Hooks.DownloadDesigner = {
   },
   getSettings() {
     return DesignerExport.getSettings()
+  },
+  // Base filename for the designer downloads, honouring the "Filename" naming
+  // convention picked in the DownloadNaming <select> (shared via localStorage).
+  resolveBaseName() {
+    const convention = localStorage.getItem('download_naming') || 'original'
+    const name = this.el.dataset.name || 'icon'
+    const toSnake = s => s.toLowerCase().replace(/\s+/g, '_')
+    const toPascal = s => s.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join('')
+    const toKebab = s => s.toLowerCase().replace(/\s+/g, '-')
+    switch (convention) {
+      case 'kebab': return toKebab(name)
+      case 'snake': return toSnake(name)
+      case 'pascal': return toPascal(name)
+      default: {
+        // "original": use the source SVG filename (strip path + extension)
+        const file = (this.svgUrl || '').split('/').pop() || ''
+        return file.replace(/\.[a-z0-9]+$/i, '') || toKebab(name)
+      }
+    }
   },
   renderPreview() {
     if (!this.ctx || !this.rawSvg) return
@@ -1743,7 +1760,7 @@ Hooks.DownloadDesigner = {
     btn.disabled = true
 
     try {
-      await DesignerExport.downloadPngZip(this.svgUrl, this.baseName, sizes)
+      await DesignerExport.downloadPngZip(this.svgUrl, this.resolveBaseName(), sizes)
       // Track in metrics
       const metricsEl = document.getElementById('metrics-tracker')
       if (metricsEl?._pushEvent) {
@@ -1766,7 +1783,7 @@ Hooks.DownloadDesigner = {
     const blob = new Blob([designed], { type: 'image/svg+xml' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
-    a.download = `${this.baseName}-designed.svg`
+    a.download = `${this.resolveBaseName()}-designed.svg`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -1886,7 +1903,11 @@ Hooks.DownloadNaming = {
     this.select = this.el.querySelector('.download-naming-select')
     this.name = this.el.dataset.name
     this.style = this.el.dataset.style
-    if (this.select) this.applyNaming(this.select.value || 'original')
+    // A re-render resets the <select> to its server default — restore the saved choice.
+    if (this.select) {
+      this.select.value = localStorage.getItem('download_naming') || 'original'
+      this.applyNaming(this.select.value)
+    }
   },
   async downloadWithColors(link) {
     const url = link.getAttribute('href')
@@ -1975,11 +1996,12 @@ Hooks.FilenameTemplate = {
   mounted() {
     const input = this.el.querySelector("input[type='text']")
     if (!input) return
-    const savedTemplate = localStorage.getItem("filename_template") || "{filename}"
-    input.value = savedTemplate
+    input.value = localStorage.getItem("filename_template") || "{filename}"
     this.renderFilenames()
-    input.addEventListener("input", () => {
-      localStorage.setItem("filename_template", input.value)
+    // Delegate on the hook root so the handler survives any DOM patch.
+    this.el.addEventListener("input", (e) => {
+      if (!e.target.matches("input[type='text']")) return
+      localStorage.setItem("filename_template", e.target.value)
       this.renderFilenames()
     })
   },

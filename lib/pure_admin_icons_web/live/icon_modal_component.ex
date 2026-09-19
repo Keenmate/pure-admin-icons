@@ -686,6 +686,7 @@ defmodule PureAdminIconsWeb.IconModalComponent do
                   class="bg-base-100 rounded-lg p-4"
                   id={"filename-section-#{@icon.icon_id}"}
                   phx-hook="FilenameTemplate"
+                  phx-update="ignore"
                   data-name={@icon.name}
                   data-style={@icon.style_code}
                   data-sizes={
