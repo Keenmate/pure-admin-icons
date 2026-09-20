@@ -16,24 +16,24 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
       <div class="rounded-box bg-base-200 overflow-hidden border border-base-300 p-8">
         <h1 class="text-3xl font-bold mb-2">{t("apiDocs.headers.pageTitle")}</h1>
         <p class="text-base-content/80 mb-8">
-          Search icons programmatically. All endpoints return JSON. No authentication required.
+          {t("apiDocs.messages.intro")}
         </p>
 
         <%!-- Icons --%>
         <div class="space-y-8">
-          <h2 class="text-xl font-bold border-b border-base-300/50 pb-2">Icons</h2>
+          <h2 class="text-xl font-bold border-b border-base-300/50 pb-2">{t("apiDocs.headers.icons")}</h2>
 
           <.endpoint
             method="GET"
             path="/api/icons/search"
-            description="Search icons by name across all icon sets. Supports full-text search, trigram similarity, and synonym matching."
+            description={t("apiDocs.descriptions.search")}
             params={[
-              {"q", "Search query (required)"},
-              {"set", "Filter by icon set code, e.g. fluentui, material, phosphor, tabler, lucide, solar (repeatable) — see /api/icon-sets for all codes"},
-              {"size", "Filter by size, e.g. 16, 20, 24, 28, 32, 48 (most sets are scalable)"},
-              {"style", "Filter by style: outline, filled, thin, light, regular, bold, rounded, sharp, duotone, line-duotone, broken, color, brands (varies by set)"},
-              {"limit", "Max results (default: 50, max: 100)"},
-              {"format", "Response format: json (default), compact, text"}
+              {"q", t("apiDocs.params.q")},
+              {"set", t("apiDocs.params.set")},
+              {"size", t("apiDocs.params.size")},
+              {"style", t("apiDocs.params.style")},
+              {"limit", t("apiDocs.params.limit")},
+              {"format", t("apiDocs.params.format")}
             ]}
             example_url="/api/icons/search?q=calendar&set=fluentui&size=24"
           />
@@ -41,7 +41,7 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
           <.endpoint
             method="GET"
             path="/api/icons/:id"
-            description="Get a single icon by ID. Returns full metadata including filenames, platform identifiers, categories, phrases, and SVG URLs for all sizes."
+            description={t("apiDocs.descriptions.iconDetail")}
             params={[]}
             example_url="/api/icons/5403"
           />
@@ -49,12 +49,12 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
 
         <%!-- Icon Sets --%>
         <div class="space-y-8 mt-10">
-          <h2 class="text-xl font-bold border-b border-base-300/50 pb-2">Icon Sets</h2>
+          <h2 class="text-xl font-bold border-b border-base-300/50 pb-2">{t("apiDocs.headers.iconSets")}</h2>
 
           <.endpoint
             method="GET"
             path="/api/icon-sets"
-            description="List all available icon sets with metadata: styles, sizes, license, color methods, icon count, plus each set's description and notes (e.g. whether its served SVGs are normalized from upstream)."
+            description={t("apiDocs.descriptions.iconSets")}
             params={[]}
             example_url="/api/icon-sets"
           />
@@ -62,57 +62,57 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
 
         <%!-- Response formats --%>
         <div class="space-y-8 mt-10">
-          <h2 class="text-xl font-bold border-b border-base-300/50 pb-2">Response Formats</h2>
+          <h2 class="text-xl font-bold border-b border-base-300/50 pb-2">{t("apiDocs.headers.responseFormats")}</h2>
 
           <p class="text-sm text-base-content/80 mb-4">
-            The <code class="text-xs font-mono text-primary">format</code> parameter on <code class="text-xs font-mono text-primary">/api/icons/search</code> controls the response shape:
+            {t("apiDocs.messages.formatsIntro")}
           </p>
 
           <div class="space-y-4 text-sm text-base-content/85">
             <div class="flex gap-2">
               <code class="text-primary font-mono">json</code>
               <span class="text-base-content/50">&mdash;</span>
-              <span>Full response: id, icon_set, name, style, style_color_method, sizes, ios/android identifiers, svg_url</span>
+              <span>{t("apiDocs.formats.json")}</span>
             </div>
             <div class="flex gap-2">
               <code class="text-primary font-mono">compact</code>
               <span class="text-base-content/50">&mdash;</span>
-              <span>Minimal JSON: icon_set, name, style, url</span>
+              <span>{t("apiDocs.formats.compact")}</span>
             </div>
             <div class="flex gap-2">
               <code class="text-primary font-mono">text</code>
               <span class="text-base-content/50">&mdash;</span>
-              <span>Plain text, one icon per line (most token-efficient for AI/LLMs)</span>
+              <span>{t("apiDocs.formats.text")}</span>
             </div>
           </div>
         </div>
 
         <%!-- Response fields --%>
         <div class="space-y-8 mt-10">
-          <h2 class="text-xl font-bold border-b border-base-300/50 pb-2">Response Fields</h2>
+          <h2 class="text-xl font-bold border-b border-base-300/50 pb-2">{t("apiDocs.headers.responseFields")}</h2>
 
           <div class="space-y-4 text-sm">
-            <p class="text-base-content/80">Key fields in the JSON response:</p>
+            <p class="text-base-content/80">{t("apiDocs.fields.intro")}</p>
             <div class="space-y-2 text-base-content/85">
               <div class="flex gap-2">
                 <code class="text-primary font-mono min-w-40">style_color_method</code>
                 <span class="text-base-content/50">&mdash;</span>
-                <span>How to set icon color via CSS: <code class="text-xs font-mono">"fill"</code>, <code class="text-xs font-mono">"stroke"</code>, or <code class="text-xs font-mono">"multicolor"</code> (not recolorable)</span>
+                <span>{t("apiDocs.fields.styleColorMethod")}</span>
               </div>
               <div class="flex gap-2">
                 <code class="text-primary font-mono min-w-40">svg_url</code>
                 <span class="text-base-content/50">&mdash;</span>
-                <span>Relative URL to the SVG file (e.g., <code class="text-xs font-mono">/icons/fluentui/regular/ic_fluent_calendar_24_regular.svg</code>)</span>
+                <span>{t("apiDocs.fields.svgUrl")}</span>
               </div>
               <div class="flex gap-2">
                 <code class="text-primary font-mono min-w-40">ios</code>
                 <span class="text-base-content/50">&mdash;</span>
-                <span>iOS/Swift identifier per size (e.g., <code class="text-xs font-mono" phx-no-curly-interpolation>{"24": "calendar24Solid"}</code>)</span>
+                <span>{t("apiDocs.fields.ios")}</span>
               </div>
               <div class="flex gap-2">
                 <code class="text-primary font-mono min-w-40">android</code>
                 <span class="text-base-content/50">&mdash;</span>
-                <span>Android/Kotlin identifier per size (e.g., <code class="text-xs font-mono" phx-no-curly-interpolation>{"24": "ic_heroicons_calendar_24_solid"}</code>)</span>
+                <span>{t("apiDocs.fields.android")}</span>
               </div>
             </div>
           </div>
@@ -120,12 +120,12 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
 
         <%!-- Other endpoints --%>
         <div class="space-y-8 mt-10">
-          <h2 class="text-xl font-bold border-b border-base-300/50 pb-2">Other Endpoints</h2>
+          <h2 class="text-xl font-bold border-b border-base-300/50 pb-2">{t("apiDocs.headers.otherEndpoints")}</h2>
 
           <.endpoint
             method="GET"
             path="/api/health"
-            description="Health check. Returns icon count and status."
+            description={t("apiDocs.descriptions.health")}
             params={[]}
             example_url="/api/health"
           />
@@ -133,7 +133,7 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
           <.endpoint
             method="GET"
             path="/icons/:icon_set/:style/:filename"
-            description="Serve an icon SVG file. Cached for 1 year with immutable header."
+            description={t("apiDocs.descriptions.serve")}
             params={[]}
             example_url="/icons/fluentui/regular/ic_fluent_calendar_24_regular.svg"
             response_type="image/svg+xml"
@@ -142,42 +142,41 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
           <.endpoint
             method="POST"
             path="/api/maintenance/:task"
-            description="Trigger a maintenance task. Requires X-API-Key header. Rate limited to 5 requests per 5 minutes."
+            description={t("apiDocs.descriptions.maintenance")}
             params={[
-              {"task", "Task to run: sync, clean, cube"},
-              {"X-API-Key", "API key (header, required)"}
+              {"task", t("apiDocs.params.maintenanceTask")},
+              {"X-API-Key", t("apiDocs.params.maintenanceKey")}
             ]}
-            note="Use POST /api/maintenance/sync/:icon_set to sync a specific set (e.g., fontawesome, fluentui)."
+            note={t("apiDocs.notes.maintenance")}
           />
         </div>
 
         <%!-- AI/LLM integration --%>
         <div class="border-t border-base-300/50 mt-10 pt-8">
-          <h2 class="text-xl font-bold mb-4">AI / LLM Integration</h2>
+          <h2 class="text-xl font-bold mb-4">{t("apiDocs.headers.aiIntegration")}</h2>
 
           <p class="text-base-content/85 text-sm mb-4">
-            For AI assistants and LLMs, use the <code class="text-xs font-mono text-primary">text</code> format for maximum token efficiency.
-            We also provide an MCP server for direct integration with Claude Desktop and Claude Code.
+            {t("apiDocs.messages.aiIntro")}
           </p>
 
           <div class="space-y-6">
             <div>
               <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/80 mb-2">
-                MCP Server (Claude Desktop / Claude Code)
+                {t("apiDocs.headers.mcpServer")}
               </h3>
               <.code_block code={~s|{\n  "mcpServers": {\n    "pure-admin-icons": {\n      "command": "npx",\n      "args": ["-y", "-p", "@keenmate/pure-admin-icons-mcp", "pure-admin-icons-mcp"]\n    }\n  }\n}|} lang="json" />
             </div>
 
             <div>
               <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/80 mb-2">
-                LLM-friendly endpoint
+                {t("apiDocs.headers.llmEndpoint")}
               </h3>
               <.code_block code="curl 'https://icons.pureadmin.io/api/icons/search?q=calendar&format=text'" />
             </div>
 
             <div>
               <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/80 mb-2">
-                Machine-readable docs
+                {t("apiDocs.headers.machineDocs")}
               </h3>
               <p class="text-base-content/85 text-sm">
                 <a href="/llms.txt" class="text-primary hover:underline">/llms.txt</a> &middot;
@@ -189,47 +188,47 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
 
         <%!-- Usage examples --%>
         <div class="border-t border-base-300/50 mt-10 pt-8">
-          <h2 class="text-xl font-bold mb-4">Usage Examples</h2>
+          <h2 class="text-xl font-bold mb-4">{t("apiDocs.headers.usageExamples")}</h2>
 
           <div class="space-y-6">
             <div>
               <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/80 mb-2">
-                Search icons
+                {t("apiDocs.examples.search")}
               </h3>
               <.code_block code="curl 'https://icons.pureadmin.io/api/icons/search?q=pen&size=24&limit=5'" />
             </div>
 
             <div>
               <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/80 mb-2">
-                Filter by multiple icon sets
+                {t("apiDocs.examples.multiSet")}
               </h3>
               <.code_block code="curl 'https://icons.pureadmin.io/api/icons/search?q=arrow&set=heroicons&set=lucide&set=fontawesome'" />
             </div>
 
             <div>
               <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/80 mb-2">
-                Get icon detail
+                {t("apiDocs.examples.iconDetail")}
               </h3>
               <.code_block code="curl 'https://icons.pureadmin.io/api/icons/5403'" />
             </div>
 
             <div>
               <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/80 mb-2">
-                List icon sets
+                {t("apiDocs.examples.listSets")}
               </h3>
               <.code_block code="curl 'https://icons.pureadmin.io/api/icon-sets'" />
             </div>
 
             <div>
               <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/80 mb-2">
-                JavaScript
+                {t("apiDocs.examples.javascript")}
               </h3>
               <.code_block code={~s|const res = await fetch('https://icons.pureadmin.io/api/icons/search?q=calendar&format=compact');\nconst { results } = await res.json();\nconsole.log(results.map(i => `${i.icon_set}/${i.name}`));|} lang="javascript" />
             </div>
 
             <div>
               <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/80 mb-2">
-                Trigger sync (authenticated)
+                {t("apiDocs.examples.sync")}
               </h3>
               <.code_block code={~s|curl -X POST -H "X-API-Key: your-key" 'https://icons.pureadmin.io/api/maintenance/sync/fontawesome'|} />
             </div>
@@ -271,7 +270,7 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
       <%= if Enum.any?(@params) do %>
         <div class="mb-3">
           <span class="text-xs font-semibold uppercase tracking-wider text-base-content/50">
-            Parameters
+            {t("apiDocs.labels.parameters")}
           </span>
           <div class="mt-1 space-y-1">
             <%= for {name, desc} <- @params do %>
@@ -287,7 +286,7 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
 
       <%= if @example_url do %>
         <div class="flex items-center gap-2">
-          <span class="text-xs text-base-content/40">Try:</span>
+          <span class="text-xs text-base-content/40">{t("apiDocs.labels.try")}</span>
           <a
             href={@example_url}
             target="_blank"
@@ -299,7 +298,7 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
       <% end %>
 
       <%= if @response_type != "application/json" do %>
-        <span class="text-xs text-base-content/40">Response: {@response_type}</span>
+        <span class="text-xs text-base-content/40">{t("apiDocs.labels.response")} {@response_type}</span>
       <% end %>
     </div>
     """

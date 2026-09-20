@@ -229,12 +229,107 @@ defmodule PureAdminIcons.Translations do
 
     # ─────────────────────────── API docs — /docs/api ─────────────
     "apiDocs.headers.pageTitle" => "API",
+    "apiDocs.headers.icons" => "Icons",
+    "apiDocs.headers.iconSets" => "Icon Sets",
+    "apiDocs.headers.responseFormats" => "Response Formats",
+    "apiDocs.headers.responseFields" => "Response Fields",
+    "apiDocs.headers.otherEndpoints" => "Other Endpoints",
+    "apiDocs.headers.aiIntegration" => "AI / LLM Integration",
+    "apiDocs.headers.usageExamples" => "Usage Examples",
+    "apiDocs.headers.mcpServer" => "MCP Server (Claude Desktop / Claude Code)",
+    "apiDocs.headers.llmEndpoint" => "LLM-friendly endpoint",
+    "apiDocs.headers.machineDocs" => "Machine-readable docs",
+    "apiDocs.messages.intro" =>
+      "Search icons programmatically. All endpoints return JSON. No authentication required.",
+    "apiDocs.messages.formatsIntro" =>
+      "The format parameter on /api/icons/search controls the response shape:",
+    "apiDocs.messages.aiIntro" =>
+      "For AI assistants and LLMs, use the text format for maximum token efficiency. We also provide an MCP server for direct integration with Claude Desktop and Claude Code.",
+    "apiDocs.descriptions.search" =>
+      "Search icons by name across all icon sets. Supports full-text search, trigram similarity, and synonym matching.",
+    "apiDocs.descriptions.iconDetail" =>
+      "Get a single icon by ID. Returns full metadata including filenames, platform identifiers, categories, phrases, and SVG URLs for all sizes.",
+    "apiDocs.descriptions.iconSets" =>
+      "List all available icon sets with metadata: styles, sizes, license, color methods, icon count, plus each set's description and notes (e.g. whether its served SVGs are normalized from upstream).",
+    "apiDocs.descriptions.health" => "Health check. Returns icon count and status.",
+    "apiDocs.descriptions.serve" => "Serve an icon SVG file. Cached for 1 year with immutable header.",
+    "apiDocs.descriptions.maintenance" =>
+      "Trigger a maintenance task. Requires X-API-Key header. Rate limited to 5 requests per 5 minutes.",
+    "apiDocs.notes.maintenance" =>
+      "Use POST /api/maintenance/sync/:icon_set to sync a specific set (e.g., fontawesome, fluentui).",
+    "apiDocs.params.q" => "Search query (required)",
+    "apiDocs.params.set" =>
+      "Filter by icon set code, e.g. fluentui, material, phosphor, tabler, lucide, solar (repeatable) — see /api/icon-sets for all codes",
+    "apiDocs.params.size" => "Filter by size, e.g. 16, 20, 24, 28, 32, 48 (most sets are scalable)",
+    "apiDocs.params.style" =>
+      "Filter by style: outline, filled, thin, light, regular, bold, rounded, sharp, duotone, line-duotone, broken, color, brands (varies by set)",
+    "apiDocs.params.limit" => "Max results (default: 50, max: 100)",
+    "apiDocs.params.format" => "Response format: json (default), compact, text",
+    "apiDocs.params.maintenanceTask" => "Task to run: sync, clean, cube",
+    "apiDocs.params.maintenanceKey" => "API key (header, required)",
+    "apiDocs.formats.json" =>
+      "Full response: id, icon_set, name, style, style_color_method, sizes, ios/android identifiers, svg_url",
+    "apiDocs.formats.compact" => "Minimal JSON: icon_set, name, style, url",
+    "apiDocs.formats.text" => "Plain text, one icon per line (most token-efficient for AI)",
+    "apiDocs.fields.intro" => "Key fields in the JSON response:",
+    "apiDocs.fields.styleColorMethod" =>
+      "How to set icon color via CSS: \"fill\", \"stroke\", or \"multicolor\" (not recolorable)",
+    "apiDocs.fields.svgUrl" =>
+      "Relative URL to the SVG file (e.g., /icons/fluentui/regular/ic_fluent_calendar_24_regular.svg)",
+    "apiDocs.fields.ios" => "iOS/Swift identifier per size (e.g., {\"24\": \"calendar24Solid\"})",
+    "apiDocs.fields.android" =>
+      "Android/Kotlin identifier per size (e.g., {\"24\": \"ic_heroicons_calendar_24_solid\"})",
+    "apiDocs.examples.search" => "Search icons",
+    "apiDocs.examples.multiSet" => "Filter by multiple icon sets",
+    "apiDocs.examples.iconDetail" => "Get icon detail",
+    "apiDocs.examples.listSets" => "List icon sets",
+    "apiDocs.examples.javascript" => "JavaScript",
+    "apiDocs.examples.sync" => "Trigger sync (authenticated)",
+    "apiDocs.labels.parameters" => "Parameters",
+    "apiDocs.labels.try" => "Try:",
+    "apiDocs.labels.response" => "Response:",
 
     # ─────────────────────────── MCP docs — /docs/mcp ─────────────
     "mcpDocs.headers.pageTitle" => "MCP Server",
+    "mcpDocs.headers.installation" => "Installation",
+    "mcpDocs.headers.availableTools" => "Available Tools",
+    "mcpDocs.headers.usageExample" => "Usage Example",
+    "mcpDocs.messages.intro" =>
+      "Search icons directly from Claude Desktop or Claude Code using the MCP (Model Context Protocol) server.",
+    "mcpDocs.messages.installation" =>
+      "The MCP server is published as an npm package. No local installation needed — npx runs it on demand.",
+    "mcpDocs.messages.claudeDesktop" => "Add this to your Claude Desktop configuration file:",
+    "mcpDocs.messages.claudeCode" => "Add the MCP server to your Claude Code settings:",
+    "mcpDocs.messages.usageExample" => "Once configured, ask Claude:",
+    "mcpDocs.tools.searchIcons" =>
+      "Search icons by name. Filter by style and size. Returns icon names, styles, sizes, and SVG URLs.",
+    "mcpDocs.tools.getIconSvg" =>
+      "Fetch the raw SVG content of a specific icon. Useful for embedding icons directly.",
+    "mcpDocs.examples.calendar" => "\"Find me a calendar icon in regular style, 24px\"",
+    "mcpDocs.examples.arrow" => "\"Search for arrow icons available in the filled style\"",
+    "mcpDocs.examples.addSvg" => "\"Get the SVG for the Add icon\"",
 
     # ─────────────────────────── LLM docs — /docs/llms ────────────
     "llmsDocs.headers.pageTitle" => "LLM Integration",
+    "llmsDocs.headers.textFormat" => "Text Format",
+    "llmsDocs.headers.machineDocs" => "Machine-Readable Docs",
+    "llmsDocs.headers.mcpServer" => "MCP Server",
+    "llmsDocs.headers.tips" => "Tips",
+    "llmsDocs.messages.intro" =>
+      "Best practices for using icons.pureadmin.io with AI assistants and large language models.",
+    "llmsDocs.messages.textFormat" =>
+      "Use format=text for the most token-efficient response. Returns one icon per line, plain text.",
+    "llmsDocs.messages.mcpServer" =>
+      "For Claude Desktop and Claude Code, use the MCP server for the best integration experience — it provides structured tool calls instead of raw HTTP.",
+    "llmsDocs.links.mcpDocs" => "Read the MCP server guide →",
+    "llmsDocs.links.llmsTxt" =>
+      "Plain text documentation for LLMs. Describes the API, search syntax, and available icon sets.",
+    "llmsDocs.links.aiPlugin" =>
+      "OpenAI plugin manifest. Allows ChatGPT and compatible tools to discover the API.",
+    "llmsDocs.tips.textFormat" => "Use format=text to minimize token usage",
+    "llmsDocs.tips.limit" => "Use limit=5 to keep responses small",
+    "llmsDocs.tips.set" => "Filter by set if you only need icons from one library",
+    "llmsDocs.tips.compact" => "The compact format gives structured JSON with minimal fields",
 
     # ─────────────────────────── Stats — /stats ───────────────────
     "stats.headers.pageTitle" => "Stats",

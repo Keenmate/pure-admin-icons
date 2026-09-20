@@ -16,50 +16,49 @@ defmodule PureAdminIconsWeb.Docs.LlmsDocsLive do
       <div class="rounded-box bg-base-200 overflow-hidden border border-base-300 p-8">
         <h1 class="text-3xl font-bold mb-2">{t("llmsDocs.headers.pageTitle")}</h1>
         <p class="text-base-content/80 mb-8">
-          Best practices for using icons.pureadmin.io with AI assistants and large language models.
+          {t("llmsDocs.messages.intro")}
         </p>
 
         <div class="space-y-8">
           <div>
-            <h2 class="text-xl font-bold border-b border-base-300/50 pb-2 mb-4">Text Format</h2>
+            <h2 class="text-xl font-bold border-b border-base-300/50 pb-2 mb-4">{t("llmsDocs.headers.textFormat")}</h2>
             <p class="text-base-content/85 text-sm mb-3">
-              Use <code class="text-xs font-mono text-primary">format=text</code> for the most token-efficient response. Returns one icon per line, plain text.
+              {t("llmsDocs.messages.textFormat")}
             </p>
             <pre class="rounded-lg px-4 py-3 text-sm overflow-x-auto bg-base-300/70 border border-base-300 shadow-sm"><code class="hljs">curl 'https://icons.pureadmin.io/api/icons/search?q=calendar&format=text'</code></pre>
           </div>
 
           <div>
-            <h2 class="text-xl font-bold border-b border-base-300/50 pb-2 mb-4">Machine-Readable Docs</h2>
+            <h2 class="text-xl font-bold border-b border-base-300/50 pb-2 mb-4">{t("llmsDocs.headers.machineDocs")}</h2>
             <div class="space-y-4 text-sm">
               <div class="flex gap-3">
                 <a href="/llms.txt" class="text-primary hover:underline font-mono">/llms.txt</a>
                 <span class="text-base-content/50">&mdash;</span>
-                <span class="text-base-content/85">Plain text documentation for LLMs. Describes the API, search syntax, and available icon sets.</span>
+                <span class="text-base-content/85">{t("llmsDocs.links.llmsTxt")}</span>
               </div>
               <div class="flex gap-3">
                 <a href="/.well-known/ai-plugin.json" class="text-primary hover:underline font-mono">/.well-known/ai-plugin.json</a>
                 <span class="text-base-content/50">&mdash;</span>
-                <span class="text-base-content/85">OpenAI plugin manifest. Allows ChatGPT and compatible tools to discover the API.</span>
+                <span class="text-base-content/85">{t("llmsDocs.links.aiPlugin")}</span>
               </div>
             </div>
           </div>
 
           <div>
-            <h2 class="text-xl font-bold border-b border-base-300/50 pb-2 mb-4">MCP Server</h2>
+            <h2 class="text-xl font-bold border-b border-base-300/50 pb-2 mb-4">{t("llmsDocs.headers.mcpServer")}</h2>
             <p class="text-base-content/85 text-sm">
-              For Claude Desktop and Claude Code, use the
-              <a href="/docs/mcp" class="text-primary hover:underline">MCP server</a>
-              for the best integration experience — it provides structured tool calls instead of raw HTTP.
+              {t("llmsDocs.messages.mcpServer")}
+              <a href="/docs/mcp" class="text-primary hover:underline">{t("llmsDocs.links.mcpDocs")}</a>
             </p>
           </div>
 
           <div>
-            <h2 class="text-xl font-bold border-b border-base-300/50 pb-2 mb-4">Tips</h2>
+            <h2 class="text-xl font-bold border-b border-base-300/50 pb-2 mb-4">{t("llmsDocs.headers.tips")}</h2>
             <ul class="text-sm text-base-content/85 space-y-2">
-              <li>Use <code class="text-xs font-mono text-primary">format=text</code> to minimize token usage</li>
-              <li>Use <code class="text-xs font-mono text-primary">limit=5</code> to keep responses small</li>
-              <li>Filter by <code class="text-xs font-mono text-primary">set</code> if you only need icons from one library</li>
-              <li>The <code class="text-xs font-mono text-primary">compact</code> format gives structured JSON with minimal fields</li>
+              <li>{t("llmsDocs.tips.textFormat")}</li>
+              <li>{t("llmsDocs.tips.limit")}</li>
+              <li>{t("llmsDocs.tips.set")}</li>
+              <li>{t("llmsDocs.tips.compact")}</li>
             </ul>
           </div>
         </div>
