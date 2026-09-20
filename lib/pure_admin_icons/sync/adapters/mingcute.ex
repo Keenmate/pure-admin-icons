@@ -2,8 +2,8 @@ defmodule PureAdminIcons.Sync.Adapters.Mingcute do
   @moduledoc """
   Sync adapter for MingCute Icons (Apache-2.0).
 
-  Downloads icons from https://github.com/Richard9394/mingcute-icons
-  (the `MingCute` repo was renamed to `mingcute-icons`; the old URL redirects).
+  Downloads icons from https://github.com/mingcute-design/mingcute-icons
+  (the old `Richard9394/MingCute` repo moved here; the old URL redirects).
 
   Structure:
     assets/svg/core/<style>/<category>/<name>.svg   (nested by style then category)
@@ -24,7 +24,7 @@ defmodule PureAdminIcons.Sync.Adapters.Mingcute do
 
   alias PureAdminIcons.Naming
 
-  @github_zip_url "https://github.com/Richard9394/mingcute-icons/archive/refs/heads/main.zip"
+  @github_zip_url "https://github.com/mingcute-design/mingcute-icons/archive/refs/heads/main.zip"
 
   # GitHub names the archive's top folder after the canonical repo name.
   @zip_root "mingcute-icons-main"
@@ -51,7 +51,7 @@ defmodule PureAdminIcons.Sync.Adapters.Mingcute do
   def homepage_url, do: "https://www.mingcute.com/"
 
   @impl true
-  def github_url, do: "https://github.com/Richard9394/mingcute-icons"
+  def github_url, do: "https://github.com/mingcute-design/mingcute-icons"
 
   @impl true
   def styles, do: ["outline", "filled"]
