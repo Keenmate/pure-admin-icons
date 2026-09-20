@@ -29,9 +29,9 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
             description="Search icons by name across all icon sets. Supports full-text search, trigram similarity, and synonym matching."
             params={[
               {"q", "Search query (required)"},
-              {"set", "Filter by icon set: fluentui, fontawesome, heroicons, lucide, tabler (repeatable)"},
-              {"size", "Filter by size: 16, 20, 24, 28, 32, 48"},
-              {"style", "Filter by style: regular, filled, outline, solid, color, light, brands"},
+              {"set", "Filter by icon set code, e.g. fluentui, material, phosphor, tabler, lucide, solar (repeatable) — see /api/icon-sets for all codes"},
+              {"size", "Filter by size, e.g. 16, 20, 24, 28, 32, 48 (most sets are scalable)"},
+              {"style", "Filter by style: outline, filled, thin, light, regular, bold, rounded, sharp, duotone, line-duotone, broken, color, brands (varies by set)"},
               {"limit", "Max results (default: 50, max: 100)"},
               {"format", "Response format: json (default), compact, text"}
             ]}
@@ -54,7 +54,7 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
           <.endpoint
             method="GET"
             path="/api/icon-sets"
-            description="List all available icon sets with metadata: styles, sizes, license, color methods, and icon count."
+            description="List all available icon sets with metadata: styles, sizes, license, color methods, icon count, plus each set's description and notes (e.g. whether its served SVGs are normalized from upstream)."
             params={[]}
             example_url="/api/icon-sets"
           />
