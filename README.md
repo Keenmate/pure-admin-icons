@@ -6,18 +6,23 @@ Search engine for open-source SVG icons. Aggregates multiple icon libraries into
 
 ## Icon Sets
 
-8 aggregated sets, ~39k icons total. Styles use a unified canonical vocabulary (`outline`, `filled`, `thin`, `light`, `regular`, `bold`, `rounded`, `sharp`, `duotone`, `color`, `brands`). Native source-library names are preserved per-set in `const.icon_set.native_style_names`.
+13 aggregated sets, ~59k icons total. Styles use a unified canonical vocabulary (`outline`, `filled`, `thin`, `light`, `regular`, `bold`, `rounded`, `sharp`, `duotone`, `line-duotone`, `broken`, `color`, `brands`). Native source-library names are preserved per-set in `const.icon_set.native_style_names`.
 
 | Set | Icons | Styles | Sizes | License |
 |-----|-------|--------|-------|---------|
+| [Bootstrap Icons](https://icons.getbootstrap.com/) | ~2050 | outline, filled | scalable | MIT |
+| [Carbon Icons](https://carbondesignsystem.com/elements/icons/library/) | ~2600 | outline, filled | scalable | Apache 2.0 |
 | [FluentUI System Icons](https://github.com/microsoft/fluentui-system-icons) | ~5400 | outline, filled, color, light | 16, 20, 24, 28, 32, 48 | MIT |
 | [Font Awesome Free](https://fontawesome.com/) | ~2850 | filled, outline, brands | scalable | CC BY 4.0 / MIT |
 | [Heroicons](https://heroicons.com/) | ~650 | outline, filled | 16, 20, 24 | MIT |
-| [Lucide](https://lucide.dev/) | ~1500 | outline | scalable | ISC |
-| [Material Symbols](https://fonts.google.com/icons) | ~10800 | filled, outline, rounded, sharp, duotone | scalable | Apache 2.0 |
+| [Lucide](https://lucide.dev/) | ~1850 | outline | scalable | ISC |
+| [Material Symbols](https://fonts.google.com/icons) | ~10750 | filled, outline, rounded, sharp, duotone | scalable | Apache 2.0 |
+| [MingCute Icons](https://www.mingcute.com/) | ~3100 | outline, filled | scalable | Apache 2.0 |
 | [Phosphor Icons](https://phosphoricons.com/) | ~9000 | thin, light, regular, bold, filled, duotone | scalable | MIT |
-| [Remix Icon](https://remixicon.com/) | ~3000 | outline, filled | scalable | Apache 2.0 |
-| [Tabler Icons](https://tabler.io/icons) | ~5800 | outline, filled | scalable | MIT |
+| [Remix Icon](https://remixicon.com/) | ~3050 | outline, filled | scalable | Apache 2.0 |
+| [Simple Icons](https://simpleicons.org/) | ~3450 | filled | scalable | CC0 1.0 |
+| [Solar](https://github.com/480-Design/Solar-Icon-Set) | ~8250 | outline, filled, duotone, line-duotone, broken, thin | scalable | CC BY 4.0 |
+| [Tabler Icons](https://tabler.io/icons) | ~6200 | outline, filled | scalable | MIT |
 
 See [icons.pureadmin.io/docs/icon-sets](https://icons.pureadmin.io/docs/icon-sets) for the live list with per-set notes, color methods, and source links.
 

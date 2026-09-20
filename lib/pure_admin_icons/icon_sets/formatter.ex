@@ -59,7 +59,9 @@ defmodule PureAdminIcons.IconSets.Formatter do
     "simpleicons" => PureAdminIcons.IconSets.Simpleicons,
     "carbon" => PureAdminIcons.IconSets.Carbon,
     "phosphor" => PureAdminIcons.IconSets.Phosphor,
-    "remix" => PureAdminIcons.IconSets.Remix
+    "remix" => PureAdminIcons.IconSets.Remix,
+    "solar" => PureAdminIcons.IconSets.Solar,
+    "mingcute" => PureAdminIcons.IconSets.Mingcute
   }
 
   @doc """
@@ -67,7 +69,10 @@ defmodule PureAdminIcons.IconSets.Formatter do
   Returns the Generic formatter as fallback.
   """
   def for_icon(%{icon_set_code: code}), do: for_set(code)
-  def for_set(code) when is_binary(code), do: Map.get(@formatters, code, PureAdminIcons.IconSets.Generic)
+
+  def for_set(code) when is_binary(code),
+    do: Map.get(@formatters, code, PureAdminIcons.IconSets.Generic)
+
   def for_set(_), do: PureAdminIcons.IconSets.Generic
 
   # ---- Dispatch helpers ----

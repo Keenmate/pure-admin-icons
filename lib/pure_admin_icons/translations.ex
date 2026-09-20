@@ -111,6 +111,7 @@ defmodule PureAdminIcons.Translations do
     "iconSets.labels.sizes" => "Sizes",
     "iconSets.labels.vectorRaster" => "Vector / raster",
     "iconSets.labels.lastSynced" => "Last synced",
+    "iconSets.labels.normalizedSvg" => "Normalized SVG",
     "iconSets.buttons.browseIcons" => "Browse icons",
     "iconSets.messages.summary" => "%{count} icon sets aggregated from open-source libraries.",
     "iconSets.messages.helpText" =>
@@ -119,6 +120,8 @@ defmodule PureAdminIcons.Translations do
     "iconSets.messages.raster" => "Raster",
     "iconSets.tooltips.nativeName" => "Native: %{native}",
     "iconSets.tooltips.colorMethod" => "Color method: %{method}",
+    "iconSets.tooltips.normalizedSvg" =>
+      "The served SVGs are normalized for theming — hardcoded colors are rewritten to currentColor, so they are not byte-identical to the upstream files. Grab originals from the source repo.",
 
     # ─────────────────────────── Icon search — / ──────────────────
     "iconSearch.headers.heroTitlePrefix" => "Search",

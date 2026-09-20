@@ -45,6 +45,7 @@
   "iconSets.labels.sizes": "Tamaños",
   "iconSets.labels.vectorRaster": "Vector / ráster",
   "iconSets.labels.lastSynced": "Última sincronización",
+  "iconSets.labels.normalizedSvg": "SVG normalizado",
   "iconSets.buttons.browseIcons": "Explorar iconos",
   "iconSets.messages.summary": "%{count} conjuntos de iconos agregados de bibliotecas de código abierto.",
   "iconSets.messages.helpText": "Haz clic en los enlaces de una tarjeta para visitar la página principal o el repositorio de GitHub. Los «nombres nativos» que se muestran en las etiquetas de estilo indican cómo se llama ese estilo en la biblioteca original.",
@@ -52,6 +53,7 @@
   "iconSets.messages.raster": "Ráster",
   "iconSets.tooltips.nativeName": "Nativo: %{native}",
   "iconSets.tooltips.colorMethod": "Método de color: %{method}",
+  "iconSets.tooltips.normalizedSvg": "Los SVG servidos están normalizados para la tematización — los colores fijos se reescriben a currentColor, por lo que no son idénticos byte a byte a los archivos originales. Consigue los originales en el repositorio de origen.",
 
   "iconSearch.headers.heroTitlePrefix": "Busca",
   "iconSearch.headers.heroTitleMiddle": "iconos de",

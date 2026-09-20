@@ -45,6 +45,7 @@
   "iconSets.labels.sizes": "Tailles",
   "iconSets.labels.vectorRaster": "Vecteur / tramé",
   "iconSets.labels.lastSynced": "Dernière synchronisation",
+  "iconSets.labels.normalizedSvg": "SVG normalisé",
   "iconSets.buttons.browseIcons": "Parcourir les icônes",
   "iconSets.messages.summary": "%{count} collections d'icônes agrégées depuis des bibliothèques open source.",
   "iconSets.messages.helpText": "Cliquez sur les liens d'une carte pour visiter la page d'accueil ou le dépôt GitHub. Les « noms natifs » affichés sur les puces de style indiquent comment ce style est appelé dans la bibliothèque source.",
@@ -52,6 +53,7 @@
   "iconSets.messages.raster": "Tramé",
   "iconSets.tooltips.nativeName": "Natif : %{native}",
   "iconSets.tooltips.colorMethod": "Méthode de couleur : %{method}",
+  "iconSets.tooltips.normalizedSvg": "Les SVG servis sont normalisés pour la colorisation — les couleurs codées en dur sont réécrites en currentColor, ils ne sont donc pas identiques octet pour octet aux fichiers d'origine. Récupérez les originaux dans le dépôt source.",
 
   "iconSearch.headers.heroTitlePrefix": "Rechercher",
   "iconSearch.headers.heroTitleMiddle": "icônes issues de",

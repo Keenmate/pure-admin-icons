@@ -6,6 +6,11 @@ defmodule PureAdminIconsWeb.Docs.IconSetsDocsLive do
   alias PureAdminIcons.Icons
   alias PureAdminIcons.IconSets
 
+  # Sets whose served SVGs are normalized during sync (hardcoded colors rewritten
+  # to currentColor for theming), so the served files are not byte-identical to
+  # upstream. Kept in sync with the adapters that transform SVGs on copy.
+  @svg_normalized_sets ~w(material carbon simpleicons solar mingcute)
+
   @impl true
   def mount(_params, _session, socket) do
     {:ok,
@@ -66,6 +71,15 @@ defmodule PureAdminIconsWeb.Docs.IconSetsDocsLive do
               >
                 {@set.code}
               </span>
+              <%= if svg_normalized?(@set.code) do %>
+                <span
+                  class="badge badge-sm badge-warning badge-outline gap-1"
+                  title={t("iconSets.tooltips.normalizedSvg")}
+                >
+                  <.icon name="hero-information-circle" class="size-3" />
+                  {t("iconSets.labels.normalizedSvg")}
+                </span>
+              <% end %>
             </div>
             <%= if @set.description && @set.description != "" do %>
               <p class="text-sm text-base-content/85">{@set.description}</p>
@@ -73,7 +87,9 @@ defmodule PureAdminIconsWeb.Docs.IconSetsDocsLive do
           </div>
           <div class="text-right shrink-0">
             <div class="text-2xl font-bold tabular-nums">{format_count(@set.icon_count)}</div>
-            <div class="text-xs text-base-content/50 uppercase tracking-wide">{t("iconSets.labels.iconsSuffix")}</div>
+            <div class="text-xs text-base-content/50 uppercase tracking-wide">
+              {t("iconSets.labels.iconsSuffix")}
+            </div>
           </div>
         </div>
 
@@ -121,7 +137,8 @@ defmodule PureAdminIconsWeb.Docs.IconSetsDocsLive do
                 class="badge badge-sm badge-outline font-mono"
                 title={style_title(@set, style)}
               >
-                {style}<%= if native = native_name(@set, style) do %>
+                {style}
+                <%= if native = native_name(@set, style) do %>
                   <span class="opacity-60 ml-1">({native})</span>
                 <% end %>
               </span>
@@ -190,6 +207,8 @@ defmodule PureAdminIconsWeb.Docs.IconSetsDocsLive do
     """
   end
 
+  defp svg_normalized?(code), do: code in @svg_normalized_sets
+
   # Returns the native-source name for a canonical style, if it differs.
   defp native_name(%{native_style_names: nsn}, style) when is_map(nsn) do
     case Map.get(nsn, style) do
@@ -227,8 +246,10 @@ defmodule PureAdminIconsWeb.Docs.IconSetsDocsLive do
   end
 
   defp format_count(nil), do: "0"
+
   defp format_count(n) when is_integer(n) and n >= 1_000 do
     "#{Float.round(n / 1_000, 1)}k"
   end
+
   defp format_count(n), do: to_string(n)
 end

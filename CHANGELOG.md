@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-20 — v0.4.0 — Solar + MingCute icon sets; upstream-normalization disclosure
+
+**Two new icon sets.** Added **Solar** (480 Design, CC BY 4.0 — ~8k icons across six weights: Linear→`outline`, Bold→`filled`, Bold Duotone→`duotone`, plus `line-duotone`, `broken`, and Outline→`thin`) and **MingCute** (Apache 2.0 — ~3k icons, `regular`→`outline` / `filled`→`filled`). Each ships a sync adapter (recursively walks the source's `style/category/*.svg` tree, slugifies names, dedups per style) and a formatter that emits Iconify identifiers (`@iconify/react|vue|svelte` components + the `@iconify/tailwind` class), since neither set has first-party component libraries. Both are registered in the `@adapters` / `@formatters` maps and given `const.icon_set` rows. The catalog is now **13 sets**; the README table and style vocabulary (`+ line-duotone, broken`) were updated.
+
+**Upstream-normalization disclosure on `/docs/icon-sets`.** Solar and MingCute hardcode their colors on the SVG paths, so — like Material/Carbon/Simple Icons — the sync rewrites every non-`none` `fill`/`stroke` to `currentColor` (preserving `opacity`, so duotone survives) to make icons themeable. The served files are therefore not byte-identical to upstream. The icon-sets docs page now flags this two ways: a glanceable **"Normalized SVG"** badge on the affected set cards (`material`, `carbon`, `simpleicons`, `solar`, `mingcute`), and a per-set **notes** disclosure explaining the rewrite and pointing to the source repo for originals (added in all five locales — the earlier three sets only had it for Material). New UI strings `iconSets.labels.normalizedSvg` / `iconSets.tooltips.normalizedSvg` in EN defaults + cs/de/es/fr.
+
+**Icon basket translations (fix).** The basket UI rendered in English under other locales: its keys existed in the locale JSON sources but had never been propagated to the DB seed (the seed predated the basket feature), and runtime reads translations from the DB with an English fallback. Regenerating the frontend-translations seed picked up the basket strings (and the new badge strings) for cs/de/es/fr.
+
+---
+
 ## 2026-09-19 — v0.3.0 — Icon basket + designer/detail polish
 
 **Icon basket.** New basket for collecting icons across sets and pages. A shopping-bag button in the navbar (with a live count) opens a right-side drawer that renders the picked icons in the same grid/list cards as the search results. Each card gained an add/remove toggle — a rounded-square `+`/`✓` in the bottom-right corner, aligned to the card's radius. The basket offers three bulk actions — download all as an SVG `.zip`, download all as a PNG `.zip`, and copy every icon's platform identifiers to the clipboard — plus a collapsible Download Designer panel so theme colour, background, padding, corner radius, plain-vs-colorized SVG, sizes and the filename-naming convention all apply to the bulk exports. The basket is persisted in `localStorage` as lightweight icon maps and restored via connect params, so it survives reloads and works across pages without a DB round-trip.

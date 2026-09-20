@@ -92,7 +92,9 @@ defmodule PureAdminIcons.Sync.Adapter do
     "material" => PureAdminIcons.Sync.Adapters.Material,
     "bootstrap" => PureAdminIcons.Sync.Adapters.Bootstrap,
     "simpleicons" => PureAdminIcons.Sync.Adapters.Simpleicons,
-    "carbon" => PureAdminIcons.Sync.Adapters.Carbon
+    "carbon" => PureAdminIcons.Sync.Adapters.Carbon,
+    "solar" => PureAdminIcons.Sync.Adapters.Solar,
+    "mingcute" => PureAdminIcons.Sync.Adapters.Mingcute
   }
 
   @doc """
@@ -190,6 +192,7 @@ defmodule PureAdminIcons.Sync.Adapter do
             downloaded_at: DateTime.utc_now() |> DateTime.to_iso8601(),
             cached: true
           }
+
           File.write!(Path.join(target, ".cache_info"), Jason.encode!(cache_info))
 
           # Remove original temp dir
@@ -224,6 +227,7 @@ defmodule PureAdminIcons.Sync.Adapter do
     else
       File.rm_rf(@cache_base_dir)
     end
+
     :ok
   end
 end

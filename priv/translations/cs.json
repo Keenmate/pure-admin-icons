@@ -46,6 +46,7 @@
   "iconSets.labels.sizes": "Velikosti",
   "iconSets.labels.vectorRaster": "Vektor / rastr",
   "iconSets.labels.lastSynced": "Naposledy synchronizováno",
+  "iconSets.labels.normalizedSvg": "Normalizované SVG",
   "iconSets.buttons.browseIcons": "Procházet ikony",
   "iconSets.messages.summary": "%{count} sad ikon agregovaných z otevřených knihoven.",
   "iconSets.messages.helpText": "Pro návštěvu domovské stránky nebo GitHub repozitáře klikněte na odkazy karty. „Nativní názvy“ zobrazené v odznácích stylů ukazují, jak se styl jmenuje ve zdrojové knihovně.",
@@ -53,6 +54,7 @@
   "iconSets.messages.raster": "Rastr",
   "iconSets.tooltips.nativeName": "Nativní: %{native}",
   "iconSets.tooltips.colorMethod": "Metoda obarvení: %{method}",
+  "iconSets.tooltips.normalizedSvg": "Poskytovaná SVG jsou upravena kvůli obarvování — pevně dané barvy jsou přepsány na currentColor, takže nejsou bajtově shodná s původními soubory. Originály najdete ve zdrojovém repozitáři.",
 
   "iconSearch.headers.heroTitlePrefix": "Hledat",
   "iconSearch.headers.heroTitleMiddle": "ikon z",

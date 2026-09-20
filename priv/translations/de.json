@@ -45,6 +45,7 @@
   "iconSets.labels.sizes": "Größen",
   "iconSets.labels.vectorRaster": "Vektor / Raster",
   "iconSets.labels.lastSynced": "Zuletzt synchronisiert",
+  "iconSets.labels.normalizedSvg": "Normalisiertes SVG",
   "iconSets.buttons.browseIcons": "Symbole durchsuchen",
   "iconSets.messages.summary": "%{count} Symbolsets aus Open-Source-Bibliotheken.",
   "iconSets.messages.helpText": "Klicken Sie auf die Links einer Karte, um die Originalseite oder das GitHub-Repository zu besuchen. Die „nativen Namen“ auf den Stil-Chips zeigen an, wie der Stil in der Quellbibliothek heißt.",
@@ -52,6 +53,7 @@
   "iconSets.messages.raster": "Raster",
   "iconSets.tooltips.nativeName": "Nativ: %{native}",
   "iconSets.tooltips.colorMethod": "Farbmethode: %{method}",
+  "iconSets.tooltips.normalizedSvg": "Die ausgelieferten SVGs sind für die Einfärbung normalisiert — fest codierte Farben werden durch currentColor ersetzt, daher sind sie nicht bytegleich mit den Originaldateien. Originale gibt es im Quell-Repository.",
 
   "iconSearch.headers.heroTitlePrefix": "Durchsuche",
   "iconSearch.headers.heroTitleMiddle": "Symbole aus",
