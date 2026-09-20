@@ -94,6 +94,8 @@ defmodule PureAdminIconsWeb.API.IconController do
       %{
         code: set.code,
         title: set.title,
+        description: set.description,
+        notes: set.notes,
         license: set.license,
         homepage_url: set.homepage_url,
         github_url: set.github_url,
