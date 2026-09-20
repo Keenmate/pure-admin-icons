@@ -290,24 +290,19 @@ defmodule PureAdminIcons.Sync.Adapters.Solar do
     end
   end
 
+  # Extract the whole archive (no path filter): the SVGs are nested under
+  # category subdirs, and `unzip`/`7z` glob patterns like `dir/*` match only the
+  # directory entry, not its nested contents — so filtering would extract nothing.
   defp extract_with_7zip(exe, zip_path, temp_dir) do
     {output, exit_code} =
-      System.cmd(
-        exe,
-        ["x", zip_path, "-o#{temp_dir}", "#{@zip_root}/#{@svg_subdir}/*", "-y"],
-        stderr_to_stdout: true
-      )
+      System.cmd(exe, ["x", zip_path, "-o#{temp_dir}", "-y"], stderr_to_stdout: true)
 
     if exit_code == 0, do: :ok, else: {:error, "7zip failed: #{output}"}
   end
 
   defp extract_with_unzip(zip_path, temp_dir) do
     {output, exit_code} =
-      System.cmd(
-        "unzip",
-        ["-q", "-o", zip_path, "#{@zip_root}/#{@svg_subdir}/*", "-d", temp_dir],
-        stderr_to_stdout: true
-      )
+      System.cmd("unzip", ["-q", "-o", zip_path, "-d", temp_dir], stderr_to_stdout: true)
 
     if exit_code == 0, do: :ok, else: {:error, "unzip failed: #{output}"}
   end

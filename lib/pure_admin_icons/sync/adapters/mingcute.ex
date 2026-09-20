@@ -2,7 +2,8 @@ defmodule PureAdminIcons.Sync.Adapters.Mingcute do
   @moduledoc """
   Sync adapter for MingCute Icons (Apache-2.0).
 
-  Downloads icons from https://github.com/Richard9394/MingCute
+  Downloads icons from https://github.com/Richard9394/mingcute-icons
+  (the `MingCute` repo was renamed to `mingcute-icons`; the old URL redirects).
 
   Structure:
     assets/svg/core/<style>/<category>/<name>.svg   (nested by style then category)
@@ -23,9 +24,10 @@ defmodule PureAdminIcons.Sync.Adapters.Mingcute do
 
   alias PureAdminIcons.Naming
 
-  @github_zip_url "https://github.com/Richard9394/MingCute/archive/refs/heads/main.zip"
+  @github_zip_url "https://github.com/Richard9394/mingcute-icons/archive/refs/heads/main.zip"
 
-  @zip_root "MingCute-main"
+  # GitHub names the archive's top folder after the canonical repo name.
+  @zip_root "mingcute-icons-main"
   @svg_subdir "assets/svg/core"
 
   # Canonical style code -> native folder name under assets/svg/core/
@@ -49,7 +51,7 @@ defmodule PureAdminIcons.Sync.Adapters.Mingcute do
   def homepage_url, do: "https://www.mingcute.com/"
 
   @impl true
-  def github_url, do: "https://github.com/Richard9394/MingCute"
+  def github_url, do: "https://github.com/Richard9394/mingcute-icons"
 
   @impl true
   def styles, do: ["outline", "filled"]
@@ -280,24 +282,19 @@ defmodule PureAdminIcons.Sync.Adapters.Mingcute do
     end
   end
 
+  # Extract the whole archive (no path filter): the SVGs are nested under
+  # category subdirs, and `unzip`/`7z` glob patterns like `dir/*` match only the
+  # directory entry, not its nested contents — so filtering would extract nothing.
   defp extract_with_7zip(exe, zip_path, temp_dir) do
     {output, exit_code} =
-      System.cmd(
-        exe,
-        ["x", zip_path, "-o#{temp_dir}", "#{@zip_root}/#{@svg_subdir}/*", "-y"],
-        stderr_to_stdout: true
-      )
+      System.cmd(exe, ["x", zip_path, "-o#{temp_dir}", "-y"], stderr_to_stdout: true)
 
     if exit_code == 0, do: :ok, else: {:error, "7zip failed: #{output}"}
   end
 
   defp extract_with_unzip(zip_path, temp_dir) do
     {output, exit_code} =
-      System.cmd(
-        "unzip",
-        ["-q", "-o", zip_path, "#{@zip_root}/#{@svg_subdir}/*", "-d", temp_dir],
-        stderr_to_stdout: true
-      )
+      System.cmd("unzip", ["-q", "-o", zip_path, "-d", temp_dir], stderr_to_stdout: true)
 
     if exit_code == 0, do: :ok, else: {:error, "unzip failed: #{output}"}
   end
