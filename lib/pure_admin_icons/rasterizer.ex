@@ -40,11 +40,12 @@ defmodule PureAdminIcons.Rasterizer do
       when is_binary(svg_path) and is_integer(size) and size in @allowed_sizes do
     out = Path.join(System.tmp_dir!(), "px-#{:erlang.unique_integer([:positive])}.png")
 
-    # Options first, then `--`, then the positional paths — so a path that happens
-    # to start with `-` can never be parsed by resvg as a flag. System.cmd/3 uses
-    # execvp (no shell), so there is no shell-metacharacter injection surface.
-    args = ["--width", Integer.to_string(size), "--height", Integer.to_string(size),
-            "--", svg_path, out]
+    # `resvg -w N -h N <in> <out>`. Both paths are always absolute and server-
+    # controlled (icons dir + our temp file), so neither can start with `-` and be
+    # misread as a flag — no `--` separator needed (resvg 0.45's pico-args parser
+    # treats a `--` as the input filename and fails). System.cmd/3 uses execvp
+    # (no shell), so there is no shell-metacharacter injection surface either.
+    args = ["-w", Integer.to_string(size), "-h", Integer.to_string(size), svg_path, out]
 
     try do
       case System.cmd(resvg_bin(), args, stderr_to_stdout: true) do

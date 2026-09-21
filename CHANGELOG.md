@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-21 — v0.5.1 — Fix PNG export against resvg 0.45
+
+**PNG rasterization argument fix.** `Rasterizer` invoked `resvg --width N --height N -- <in> <out>`, but resvg 0.45.x (Debian trixie) treats the `--` end-of-options separator as the input filename and fails with "failed to open the provided file" — so every `/api/icons/png-zip` request 500'd/422'd in production while SVG export worked. Dropped the `--` (both paths are always absolute and server-controlled, so there's no `-`-prefixed-path injection surface to guard) and switched to the short `-w`/`-h` flags. SVG export, metrics, and the DB changes were unaffected.
+
+---
+
 ## 2026-09-21 — v0.5.0 — Bulk PNG/SVG ZIP export API; metrics tracking fixes + retention
 
 **Bulk export endpoints.** Two new API endpoints bundle many icons into a single ZIP: `POST /api/icons/png-zip` (rasterized PNGs at requested sizes) and `POST /api/icons/svg-zip` (raw source SVGs). Both take a list of `(set, name, style)` icons — the caller's `name` is only a DB lookup key (resolved via the new `public.get_icon_details_by_keys` batch function), never a filesystem path; the SVG path is built from trusted DB columns and re-checked to sit inside the icons directory. PNG rasterization uses the **`resvg`** CLI (`PureAdminIcons.Rasterizer`, shelled out like the sync pipeline's 7z/unzip; added to the Docker runtime image). Guardrails: per-IP rate limit (429) and a render-units cap of `icons × sizes` (422) so a request can't ask for 50k icons at every size. Zip entries are namespaced `set/style/name[-size]` (no collisions across styles) with a `manifest.json` reporting resolved/skipped icons and any render failures. Handled by `IconExportController`; 15 unit tests cover the validation/guardrail paths.
