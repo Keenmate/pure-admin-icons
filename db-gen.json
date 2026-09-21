@@ -43,7 +43,8 @@
         "get_icon_count": true,
         "get_icon_counts_by_set": true,
         "get_group_translations": true,
-        "get_icon_by_filename": true
+        "get_icon_by_filename": true,
+        "get_icon_details_by_keys": true
       }
     },
     {

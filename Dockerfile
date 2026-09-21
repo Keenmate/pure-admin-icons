@@ -46,7 +46,7 @@ RUN mix release
 # Runtime stage
 FROM debian:trixie-slim
 
-# Install runtime dependencies + 7zip and unzip for icon sync
+# Install runtime dependencies + 7zip/unzip for icon sync + resvg for PNG export
 RUN apt-get update -y && apt-get install -y \
     libstdc++6 \
     openssl \
@@ -55,6 +55,7 @@ RUN apt-get update -y && apt-get install -y \
     ca-certificates \
     p7zip-full \
     unzip \
+    resvg \
     && apt-get clean && rm -f /var/lib/apt/lists/*_*
 
 # Set locale

@@ -499,18 +499,11 @@ defmodule PureAdminIconsWeb.IconSearchLive do
     Logger.info("[metrics] track_download icon_id=#{icon_id} size=#{size} naming=#{naming}")
     # `size` may be a single pixel value ("24"), a comma-joined list
     # ("32,64,128") for PNG-ZIP batches, "0" for scalable single-SVG downloads,
-    # or "" for scalable icons with no size grid. Parse defensively.
-    size_opt =
-      case size do
-        s when is_binary(s) and s != "" ->
-          case Integer.parse(s) do
-            {n, ""} -> n
-            _ -> nil
-          end
-
-        _ ->
-          nil
-      end
+    # or "" for scalable icons with no size grid. A multi-size bundle records one
+    # row per size so per-size download popularity is preserved (previously the
+    # comma-joined string failed Integer.parse and collapsed to a single nil-size
+    # row — undercounting every multi-size PNG-ZIP download).
+    sizes = download_sizes(size)
 
     # `naming` can be:
     #   - "designer:png-zip" / "popover:png-zip"  (surface:format, ready to split)
@@ -522,20 +515,51 @@ defmodule PureAdminIconsWeb.IconSearchLive do
         [n] -> {"inline", "svg-#{n}"}
       end
 
-    Task.start(fn ->
-      case Icons.track_action(
-             String.to_integer(icon_id),
-             "download",
-             "web",
-             size: size_opt,
-             surface: surface,
-             format: format
-           ) do
-        :ok ->
-          Logger.info("[metrics] track_download OK icon_id=#{icon_id} #{surface}/#{format}")
+    icon_id_int = String.to_integer(icon_id)
 
-        {:error, reason} ->
-          Logger.error("[metrics] track_download FAILED icon_id=#{icon_id}: #{inspect(reason)}")
+    Task.start(fn ->
+      Enum.each(sizes, fn size_opt ->
+        case Icons.track_action(icon_id_int, "download", "web",
+               size: size_opt, surface: surface, format: format) do
+          :ok ->
+            Logger.info("[metrics] track_download OK icon_id=#{icon_id} size=#{inspect(size_opt)} #{surface}/#{format}")
+
+          {:error, reason} ->
+            Logger.error("[metrics] track_download FAILED icon_id=#{icon_id}: #{inspect(reason)}")
+        end
+      end)
+    end)
+
+    {:noreply, socket}
+  end
+
+  # Bulk export from the basket (client-side zip). Records one row per icon for
+  # SVG bundles, and one row per (icon × size) for PNG bundles — fixing the gap
+  # where basket exports were previously untracked entirely.
+  def handle_event("track_download_batch", %{"icon-ids" => icon_ids} = params, socket) do
+    require Logger
+    surface = params["surface"] || "basket"
+    format = params["format"] || "svg-zip"
+
+    sizes =
+      case params["sizes"] do
+        list when is_list(list) ->
+          case list |> Enum.map(&metric_size/1) |> Enum.reject(&is_nil/1) |> Enum.uniq() do
+            [] -> [nil]
+            xs -> xs
+          end
+
+        _ ->
+          [nil]
+      end
+
+    ids = icon_ids |> List.wrap() |> Enum.map(&metric_icon_id/1) |> Enum.reject(&is_nil/1)
+
+    Logger.info("[metrics] track_download_batch icons=#{length(ids)} sizes=#{inspect(sizes)} #{surface}/#{format}")
+
+    Task.start(fn ->
+      for id <- ids, size <- sizes do
+        Icons.track_action(id, "download", "web", size: size, surface: surface, format: format)
       end
     end)
 
@@ -567,6 +591,46 @@ defmodule PureAdminIconsWeb.IconSearchLive do
 
     {:noreply, socket}
   end
+
+  # Turns the wire `size` value into a list of size options — one per metric row:
+  #   "32,64,128" -> [32, 64, 128]  (multi-size bundle → one row per size)
+  #   "24"        -> [24]
+  #   "0" / ""    -> [nil]          (scalable / no size grid → single null-size row)
+  defp download_sizes(size) when is_binary(size) do
+    parsed =
+      size
+      |> String.split(",", trim: true)
+      |> Enum.map(&metric_size/1)
+      |> Enum.reject(&is_nil/1)
+      |> Enum.uniq()
+
+    if parsed == [], do: [nil], else: parsed
+  end
+
+  defp download_sizes(_), do: [nil]
+
+  # A positive pixel size, or nil (scalable "0", blanks, junk).
+  defp metric_size(n) when is_integer(n) and n > 0, do: n
+
+  defp metric_size(s) when is_binary(s) do
+    case Integer.parse(String.trim(s)) do
+      {n, ""} when n > 0 -> n
+      _ -> nil
+    end
+  end
+
+  defp metric_size(_), do: nil
+
+  defp metric_icon_id(n) when is_integer(n), do: n
+
+  defp metric_icon_id(s) when is_binary(s) do
+    case Integer.parse(s) do
+      {n, ""} -> n
+      _ -> nil
+    end
+  end
+
+  defp metric_icon_id(_), do: nil
 
   defp build_path(socket, overrides) do
     query = Keyword.get(overrides, :q, socket.assigns.query)

@@ -326,6 +326,42 @@ defmodule Database.DbContext do
 
 
   @doc """
+  Calls database function public.get_icon_details_by_keys
+  
+  Returns: {:ok, [%Models.GetIconDetailsByKeysModel{}]} | {:error, any()}
+  
+  """
+  @spec get_icon_details_by_keys(map() | list(), keyword()) :: {:ok, [%Models.GetIconDetailsByKeysModel{}]} | {:error, any()}
+  def get_icon_details_by_keys(pairs, query_opts \\ []) do
+    Logger.debug("Calling database routine", routine_name: "get_icon_details_by_keys")
+
+    sql_params_str =
+      [
+        {"_pairs", pairs}
+      ]
+      |> Enum.filter(fn {_name, value} -> value != :eg_value_not_provided end)
+      |> Enum.with_index(1)
+      |> Enum.map(fn {_tuple, index} -> "$#{index}" end)
+      |> Enum.join(", ")
+
+    sql_query_params =
+      [
+        pairs
+      ]
+      |> Enum.filter(fn value -> value != :eg_value_not_provided end)
+
+    query(
+      "select * from public.get_icon_details_by_keys(#{sql_params_str})",
+      sql_query_params,
+      query_opts
+    )
+    
+    |> Processors.GetIconDetailsByKeysProcessor.parse_result()
+    
+  end
+
+
+  @doc """
   Calls database function public.get_icon_metrics
   
   Returns: {:ok, [%Models.GetIconMetricsModel{}]} | {:error, any()}

@@ -689,6 +689,22 @@ Hooks.BasketActions = {
   items() {
     try { return JSON.parse(this.el.dataset.basket || '[]') } catch { return [] }
   },
+  // Record a bulk export in metrics. PNG bundles track one row per (icon × size);
+  // SVG bundles track one row per icon. Mirrors the single-icon designer's
+  // track_download, but batched into a single server event.
+  trackExport(action, items) {
+    const iconIds = items.map(i => i.icon_id).filter(id => id != null)
+    if (iconIds.length === 0) return
+    if (action === 'png-zip') {
+      this.pushEvent('track_download_batch', {
+        'icon-ids': iconIds, sizes: DesignerExport.getSizes(), surface: 'basket', format: 'png-zip'
+      })
+    } else if (action === 'svg-zip') {
+      this.pushEvent('track_download_batch', {
+        'icon-ids': iconIds, sizes: [], surface: 'basket', format: 'svg-zip'
+      })
+    }
+  },
   flash(btn) {
     if (!btn) return
     const svg = btn.querySelector('svg')
@@ -705,6 +721,7 @@ Hooks.BasketActions = {
       try {
         if (action === 'svg-zip') await DesignerExport.downloadSvgZip(items)
         else if (action === 'png-zip') await DesignerExport.downloadPngZipBatch(items)
+        this.trackExport(action, items)
         this.flash(btn)
       } catch (err) {
         console.error('[BasketActions] export failed:', err)

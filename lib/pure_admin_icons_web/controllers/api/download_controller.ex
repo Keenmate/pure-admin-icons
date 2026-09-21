@@ -17,10 +17,29 @@ defmodule PureAdminIconsWeb.API.DownloadController do
   require Logger
 
   alias Database.DbContext
-  alias PureAdminIcons.Icons
+  alias PureAdminIcons.{Icons, RateLimiter}
   alias PureAdminIconsWeb.IconFileController
 
+  # Per-IP budget for explicit tracked downloads. Generous — real clients pull
+  # many icons — but bounds abuse. The passive `/icons/*` img serve is NOT rate
+  # limited (a single page legitimately loads dozens at once).
+  @rate_limit 300
+  @rate_scale :timer.minutes(1)
+
   def show(conn, %{"icon_set" => icon_set, "style" => style, "filename" => filename} = params) do
+    case RateLimiter.hit("download:#{client_ip(conn)}", @rate_scale, @rate_limit) do
+      {:deny, retry_ms} ->
+        conn
+        |> put_resp_header("retry-after", to_string(div(retry_ms, 1000)))
+        |> put_status(429)
+        |> json(%{error: "Too many downloads", retry_after_seconds: div(retry_ms, 1000)})
+
+      {:allow, _} ->
+        do_show(conn, icon_set, style, filename, params)
+    end
+  end
+
+  defp do_show(conn, icon_set, style, filename, params) do
     case DbContext.get_icon_by_filename(icon_set, style, filename) do
       {:ok, [%{icon_id: icon_id, size: size} | _]} ->
         case Icons.track_action(icon_id, "download", "api",
@@ -50,5 +69,12 @@ defmodule PureAdminIconsWeb.API.DownloadController do
     end
 
     IconFileController.show(conn, params)
+  end
+
+  defp client_ip(conn) do
+    case Plug.Conn.get_req_header(conn, "x-forwarded-for") do
+      [forwarded | _] -> forwarded |> String.split(",") |> hd() |> String.trim()
+      [] -> conn.remote_ip |> :inet.ntoa() |> to_string()
+    end
   end
 end
