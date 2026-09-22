@@ -2190,15 +2190,20 @@ window.copyFromButton = function(button) {
   }
 }
 
-// Stable per-visitor session id for usage analytics (audit.session). Minted once
-// and persisted in localStorage so searches/copies/downloads group across the visit.
+// Per-session id for usage analytics (audit.session). Kept in sessionStorage — NOT
+// localStorage — so it lasts a browsing session (survives reloads within the tab,
+// resets when the tab/window closes) rather than being a permanent browser identity.
+// A fresh session each sitting also means audit.session captures the current IP.
 function getSessionUid() {
-  let uid = localStorage.getItem("session_uid")
+  // One-time cleanup of the old permanent id from the localStorage era.
+  localStorage.removeItem("session_uid")
+
+  let uid = sessionStorage.getItem("session_uid")
   if (!uid) {
     uid = (window.crypto && crypto.randomUUID)
       ? crypto.randomUUID()
       : (Date.now().toString(36) + Math.random().toString(36).slice(2))
-    localStorage.setItem("session_uid", uid)
+    sessionStorage.setItem("session_uid", uid)
   }
   return uid
 }

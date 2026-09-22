@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-22 — v0.6.2 — Session id is per-session, not permanent
+
+**`session_uid` moved from `localStorage` to `sessionStorage`.** It was minted once and kept forever, making it a permanent browser identity rather than a session — so an `audit.session` spanned months of visits and (being first-seen-immutable) froze its IP/referrer/utm at the very first visit. It now lives in `sessionStorage`: one id per browsing session (survives reloads within the tab, resets when the tab/window closes). A fresh session each sitting also means `audit.session` captures the **current** IP, so the immutable-session design stays correct without a latest-wins update. The old permanent `localStorage` key is cleaned up on load, so existing visitors get a fresh, correctly-scoped session (and their real IP) on next load.
+
+---
+
 ## 2026-09-22 — v0.6.1 — Real client IP behind Traefik (remote_ip)
 
 **Fixed web session IPs recording the proxy address.** The audit session's client IP was resolved by a hand-rolled `x-forwarded-for` first-hop parse, which (a) ignored `x-real-ip` — the header Traefik often sends on the websocket upgrade — and (b) didn't skip the private docker/Traefik hop, so many web sessions logged `10.30.0.2` instead of the real client. Switched `PureAdminIconsWeb.ClientInfo` to the `remote_ip` package's pure `RemoteIp.from/2`, which inspects `Forwarded` / `X-Forwarded-For` / `X-Real-Ip` and auto-skips reserved/private hops, falling back to the socket peer only when no forwarded header carries a public address. Applies to both the LiveView `connect_info` path and the API `Plug.Conn` path. No Traefik/compose change needed — it was already forwarding the client IP (a real public address was being captured intermittently); this makes the app read it reliably.
