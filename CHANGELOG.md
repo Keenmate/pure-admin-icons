@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-22 — v0.6.3 — Basket-clear event; button cursor fix
+
+**`basket_cleared` audit event.** The clear-all basket button recorded nothing (only per-icon add/remove did). It now emits a session-level `basket_cleared` event (via the generic `audit.create_event`, DB `v1.23`) carrying `{count: N}` — but only when the basket wasn't already empty. Not icon-scoped, so it doesn't snapshot an icon identity.
+
+**Cursor on custom buttons.** Tailwind v4's preflight doesn't set `cursor: pointer` on `<button>`, so custom (non-`.btn`) buttons — the basket `+`/`✓` toggle, clear-basket, view/period toggles — showed the default arrow. Added a base rule (`button:not(:disabled) { cursor: pointer }`) plus `cursor-pointer` on the basket toggle.
+
+---
+
 ## 2026-09-22 — v0.6.2 — Session id is per-session, not permanent
 
 **`session_uid` moved from `localStorage` to `sessionStorage`.** It was minted once and kept forever, making it a permanent browser identity rather than a session — so an `audit.session` spanned months of visits and (being first-seen-immutable) froze its IP/referrer/utm at the very first visit. It now lives in `sessionStorage`: one id per browsing session (survives reloads within the tab, resets when the tab/window closes). A fresh session each sitting also means `audit.session` captures the **current** IP, so the immutable-session design stays correct without a latest-wins update. The old permanent `localStorage` key is cleaned up on load, so existing visitors get a fresh, correctly-scoped session (and their real IP) on next load.

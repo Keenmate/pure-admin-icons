@@ -535,6 +535,18 @@ defmodule PureAdminIconsWeb.IconSearchLive do
   end
 
   def handle_event("clear_basket", _params, socket) do
+    count = length(socket.assigns.basket)
+
+    if count > 0 do
+      session_uid = socket.assigns[:session_uid]
+      utm = socket.assigns[:utm_data]
+
+      Task.start(fn ->
+        PureAdminIcons.Audit.track_session_event(session_uid, "web", "basket_cleared",
+          %{"count" => count}, utm: utm)
+      end)
+    end
+
     {:noreply, put_basket(socket, [])}
   end
 
@@ -1613,7 +1625,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
           else: t("iconSearch.tooltips.addToBasket")
       }
       class={[
-        "basket-toggle inline-flex items-center justify-center w-7 h-7 rounded-lg transition-colors shadow-sm border",
+        "basket-toggle inline-flex items-center justify-center w-7 h-7 rounded-lg transition-colors shadow-sm border cursor-pointer",
         if(@in_basket,
           do: "bg-primary text-primary-content border-primary hover:bg-primary/80",
           else:

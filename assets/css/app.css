@@ -244,6 +244,14 @@ html.theme-transitions *::after {
   background: oklch(72% 0.19 60 / 0.2);
 }
 
+/* Tailwind v4 preflight doesn't set a pointer cursor on buttons; custom (non-.btn)
+   buttons — basket +/✓ toggle, clear-basket, view/period toggles — otherwise show
+   the default arrow. Enabled buttons get the hand; disabled ones keep not-allowed. */
+button:not(:disabled),
+[role="button"]:not(:disabled) {
+  cursor: pointer;
+}
+
 /* ── Theme toggle pill positioning ── */
 .theme-toggle-pill { left: 0; }
 [data-theme-toggle]:not([data-auto]) .theme-toggle-pill { left: 0; }

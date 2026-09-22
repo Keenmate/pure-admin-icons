@@ -89,6 +89,16 @@ defmodule PureAdminIcons.Audit do
     end)
   end
 
+  @doc """
+  Record a session-level event not tied to a single icon (e.g. `"basket_cleared"`),
+  via the generic writer. `event_data` is a plain map stored as jsonb. `opts`: `:utm`.
+  """
+  def track_session_event(session_uid, source, event_type_code, event_data, opts \\ []) do
+    safe(fn ->
+      DbContext.audit_create_event(session_uid, source, event_type_code, event_data, opts[:utm])
+    end)
+  end
+
   # Never let a metrics write crash a request/LiveView path.
   defp safe(fun) do
     try do
