@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-22 — v0.6.1 — Real client IP behind Traefik (remote_ip)
+
+**Fixed web session IPs recording the proxy address.** The audit session's client IP was resolved by a hand-rolled `x-forwarded-for` first-hop parse, which (a) ignored `x-real-ip` — the header Traefik often sends on the websocket upgrade — and (b) didn't skip the private docker/Traefik hop, so many web sessions logged `10.30.0.2` instead of the real client. Switched `PureAdminIconsWeb.ClientInfo` to the `remote_ip` package's pure `RemoteIp.from/2`, which inspects `Forwarded` / `X-Forwarded-For` / `X-Real-Ip` and auto-skips reserved/private hops, falling back to the socket peer only when no forwarded header carries a public address. Applies to both the LiveView `connect_info` path and the API `Plug.Conn` path. No Traefik/compose change needed — it was already forwarding the client IP (a real public address was being captured intermittently); this makes the app read it reliably.
+
+---
+
 ## 2026-09-22 — v0.6.0 — Audit-log usage metrics (sessions + IP); live stats
 
 **Metrics moved to a session-aware event log.** Replaced the ad-hoc `search_metric` / `icon_metric` / `icon_metric_cube` trio with a generic `audit.*` event log (DB `v1.21`/`v1.22`) modelled on gcp-documenthub's audit schema: one `audit.session` per visitor and an append-only `audit.event` stream carrying an `event_type_code` + a jsonb identity **snapshot**, so metrics survive an icon being deleted/re-synced with no denormalization dance. Copy, download, search, **and now icon-detail-open + basket add/remove** are all events. `/stats` (`get_stats_overview`, `get_popular_icons`, …) is computed **live** off the log — no cube, no daily-refresh staleness (the `MetricsCubeRefresher` GenServer + 4 AM job are gone).

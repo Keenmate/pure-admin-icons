@@ -4,7 +4,7 @@ defmodule PureAdminIcons.MixProject do
   def project do
     [
       app: :pure_admin_icons,
-      version: "0.6.0",
+      version: "0.6.1",
       elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -55,6 +55,7 @@ defmodule PureAdminIcons.MixProject do
       {:telemetry_metrics, "~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
       {:jason, "~> 1.2"},
+      {:remote_ip, "~> 1.2"},
       {:dns_cluster, "~> 0.3.0"},
       {:bandit, "~> 1.5"}
     ]
