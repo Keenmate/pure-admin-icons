@@ -7,7 +7,6 @@ defmodule PureAdminIconsWeb.ClientInfo do
   Traefik — the stored IP is geo-located offline to derive countries. The IP is
   kept on the `audit.session` so abusive traffic is attributable (and blockable).
   """
-  require Logger
   alias Plug.Conn
 
   @doc """
@@ -54,17 +53,6 @@ defmodule PureAdminIconsWeb.ClientInfo do
   def api_session(%Conn{} = conn) do
     ip = ip(conn)
     uid = header_session(conn) || "ip:" <> ip
-
-    # TEMP diagnostic (remove after): show exactly what forwarded headers Traefik
-    # passes, to prove whether the real public IP even reaches the app.
-    Logger.info(
-      "[client-ip-debug] resolved=#{ip} peer=#{conn.remote_ip |> :inet.ntoa() |> to_string()} " <>
-        "xff=#{inspect(Conn.get_req_header(conn, "x-forwarded-for"))} " <>
-        "xrealip=#{inspect(Conn.get_req_header(conn, "x-real-ip"))} " <>
-        "forwarded=#{inspect(Conn.get_req_header(conn, "forwarded"))} " <>
-        "cf=#{inspect(Conn.get_req_header(conn, "cf-connecting-ip"))}"
-    )
-
     {uid, %{"ip" => ip}}
   end
 end
