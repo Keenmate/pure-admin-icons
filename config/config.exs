@@ -56,9 +56,8 @@ config :tailwind,
 config :pure_admin_icons, PureAdminIcons.Scheduler,
   jobs: [
     # Sync icons daily at 3 AM
-    {"0 3 * * *", {PureAdminIcons.Sync.Worker, :sync_all, []}},
-    # Refresh metrics cube daily at 4 AM
-    {"0 4 * * *", {Database.DbContext, :refresh_icon_metrics_cube, []}}
+    {"0 3 * * *", {PureAdminIcons.Sync.Worker, :sync_all, []}}
+    # Metrics are computed live from the audit event log (v1.21) — no cube to refresh.
   ]
 
 # Use Jason for JSON parsing in Phoenix

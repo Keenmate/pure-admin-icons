@@ -1,9 +1,11 @@
 defmodule PureAdminIconsWeb.API.IconController do
   use PureAdminIconsWeb, :controller
 
+  alias PureAdminIcons.Audit
   alias PureAdminIcons.Icons
   alias PureAdminIcons.Icons.Icon
   alias PureAdminIcons.SearchMetricsCollector
+  alias PureAdminIconsWeb.ClientInfo
 
   @doc """
   Search for icons across all icon sets.
@@ -41,15 +43,29 @@ defmodule PureAdminIconsWeb.API.IconController do
     opts = if size, do: Keyword.put(opts, :sizes, [size]), else: opts
     opts = if style, do: Keyword.put(opts, :styles, [style]), else: opts
 
-    icons = case Icons.search(query, opts) do
-      {:ok, results} -> results
-      {:error, _} -> []
-    end
+    icons =
+      case Icons.search(query, opts) do
+        {:ok, results} -> results
+        {:error, _} -> []
+      end
+
     result_count = length(icons)
 
-    # Record search metrics (batched, non-blocking) - include first icon_set if filtered
-    icon_set_code = if icon_sets != [], do: hd(icon_sets), else: nil
-    SearchMetricsCollector.record(query, size, style, result_count, "api", icon_set_code)
+    # Record search metrics (batched, non-blocking) - include first icon_set if filtered.
+    # Empty API queries are still navigation-free deliberate calls, but we skip them
+    # to match the web rule and keep the "search" signal meaningful.
+    if query != "" do
+      {session_uid, request_data} = ClientInfo.api_session(conn)
+      Audit.ensure_session("api", session_uid, request_data: request_data)
+      icon_set_code = if icon_sets != [], do: hd(icon_sets), else: nil
+
+      SearchMetricsCollector.record(session_uid, "api", query,
+        result_count: result_count,
+        size: size,
+        style: style,
+        icon_set: icon_set_code
+      )
+    end
 
     format_response(conn, format, %{query: query, icons: icons})
   end
@@ -90,24 +106,25 @@ defmodule PureAdminIconsWeb.API.IconController do
   def icon_sets(conn, _params) do
     sets = Icons.list_icon_sets()
 
-    formatted = Enum.map(sets, fn set ->
-      %{
-        code: set.code,
-        title: set.title,
-        description: set.description,
-        notes: set.notes,
-        license: set.license,
-        homepage_url: set.homepage_url,
-        github_url: set.github_url,
-        styles: set.styles,
-        sizes: set.sizes,
-        default_size: set.default_size,
-        style_color_methods: set.style_color_methods,
-        is_scalable: set.is_scalable,
-        has_single_source: set.has_single_source,
-        icon_count: set.icon_count
-      }
-    end)
+    formatted =
+      Enum.map(sets, fn set ->
+        %{
+          code: set.code,
+          title: set.title,
+          description: set.description,
+          notes: set.notes,
+          license: set.license,
+          homepage_url: set.homepage_url,
+          github_url: set.github_url,
+          styles: set.styles,
+          sizes: set.sizes,
+          default_size: set.default_size,
+          style_color_methods: set.style_color_methods,
+          is_scalable: set.is_scalable,
+          has_single_source: set.has_single_source,
+          icon_count: set.icon_count
+        }
+      end)
 
     json(conn, %{icon_sets: formatted})
   end
@@ -183,6 +200,7 @@ defmodule PureAdminIconsWeb.API.IconController do
   end
 
   defp default_size([]), do: 0
+
   defp default_size(sizes) when is_list(sizes) do
     if 24 in sizes, do: 24, else: hd(sizes)
   end

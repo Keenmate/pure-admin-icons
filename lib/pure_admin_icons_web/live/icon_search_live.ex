@@ -36,6 +36,28 @@ defmodule PureAdminIconsWeb.IconSearchLive do
     # Stored as full icon maps so the drawer can render + bulk-download without a DB hit.
     basket = restore_basket(connect_params["basket"])
 
+    # Usage analytics: a stable per-visitor session_uid (minted + persisted in the
+    # browser, passed via connect params) groups searches/copies/downloads into an
+    # audit.session. utm_data travels with every event; the session row also keeps
+    # the referrer. Absent on static render — set only once connected.
+    session_uid = connect_params["session_uid"]
+    utm_data = normalize_utm(connect_params["utm"])
+
+    if connected and is_binary(session_uid) do
+      client_ip =
+        PureAdminIconsWeb.ClientInfo.ip_from_connect_info(
+          Phoenix.LiveView.get_connect_info(socket, :x_headers),
+          Phoenix.LiveView.get_connect_info(socket, :peer_data)
+        )
+
+      request_data =
+        %{"ip" => client_ip, "referrer" => connect_params["referrer"], "utm" => utm_data}
+        |> Enum.reject(fn {_k, v} -> is_nil(v) end)
+        |> Map.new()
+
+      PureAdminIcons.Audit.ensure_session("web", session_uid, request_data: request_data)
+    end
+
     {last_sync_us, last_sync_result} = :timer.tc(fn -> Icons.get_last_sync() end)
 
     {last_sync_at, discrepancy_count} =
@@ -76,6 +98,9 @@ defmodule PureAdminIconsWeb.IconSearchLive do
       |> assign(basket: basket)
       |> assign(basket_ids: basket_ids(basket))
       |> assign(basket_open: false)
+      |> assign(session_uid: session_uid)
+      |> assign(utm_data: utm_data)
+      |> assign(last_tracked_query: nil)
 
     duration_ms =
       System.convert_time_unit(System.monotonic_time() - mount_start, :native, :millisecond)
@@ -149,14 +174,21 @@ defmodule PureAdminIconsWeb.IconSearchLive do
         [] -> 0
       end
 
-    if connected do
-      SearchMetricsCollector.record(
-        query,
-        List.first(sizes),
-        List.first(styles),
-        total_count,
-        "web",
-        List.first(icon_sets)
+    # Record a search only for a real, *changed* query. handle_params fires on
+    # every push_patch — filter toggles, pagination, clear, initial load, and each
+    # debounced keystroke — so tracking unconditionally counted navigation as
+    # "searches" (the bulk of the old over-count). Skip empty queries, and skip
+    # repeats of the last tracked query (filter/paginate while a query is present).
+    track_query? =
+      connected and query != "" and query != socket.assigns[:last_tracked_query]
+
+    if track_query? do
+      SearchMetricsCollector.record(socket.assigns[:session_uid], "web", query,
+        result_count: total_count,
+        size: List.first(sizes),
+        style: List.first(styles),
+        icon_set: List.first(icon_sets),
+        utm: socket.assigns[:utm_data]
       )
     end
 
@@ -193,7 +225,8 @@ defmodule PureAdminIconsWeb.IconSearchLive do
         total_count: total_count,
         total_pages: total_pages,
         selected_icon: nil,
-        filters_initialized: true
+        filters_initialized: true,
+        last_tracked_query: if(track_query?, do: query, else: socket.assigns[:last_tracked_query])
       )
       |> maybe_save_filters(styles, sizes, icon_sets)
 
@@ -232,6 +265,28 @@ defmodule PureAdminIconsWeb.IconSearchLive do
 
   defp no_filter_params?(params) do
     is_nil(params["styles"]) and is_nil(params["sizes"]) and is_nil(params["set"])
+  end
+
+  # utm from connect params is a JSON object (possibly empty). Treat empty/non-map
+  # as nil so events carry SQL NULL rather than an empty {}.
+  defp normalize_utm(utm) when is_map(utm) and map_size(utm) > 0, do: utm
+  defp normalize_utm(_), do: nil
+
+  # Record a basket add/remove engagement event, but only when the basket actually
+  # changed (toggling on an icon that isn't on the current page is a no-op).
+  defp maybe_track_basket(socket, id, was_member?, changed?) do
+    with true <- changed?,
+         {icon_id, _} <- Integer.parse(id) do
+      event = if was_member?, do: "icon_basket_removed", else: "icon_basket_added"
+      session_uid = socket.assigns[:session_uid]
+      utm = socket.assigns[:utm_data]
+
+      Task.start(fn ->
+        PureAdminIcons.Audit.track_event(session_uid, "web", icon_id, event, utm: utm)
+      end)
+    else
+      _ -> :ok
+    end
   end
 
   defp to_int(val) when is_integer(val), do: val
@@ -427,6 +482,17 @@ defmodule PureAdminIconsWeb.IconSearchLive do
     # Fetch metrics for this icon (from raw table, fast enough for single icon)
     metrics = if icon, do: Icons.icon_metrics(icon.icon_id), else: %{}
 
+    if icon do
+      session_uid = socket.assigns[:session_uid]
+      utm = socket.assigns[:utm_data]
+
+      Task.start(fn ->
+        PureAdminIcons.Audit.track_event(session_uid, "web", icon.icon_id, "icon_detail_opened",
+          utm: utm
+        )
+      end)
+    end
+
     {:noreply, assign(socket, selected_icon: icon, icon_metrics: metrics)}
   end
 
@@ -449,9 +515,10 @@ defmodule PureAdminIconsWeb.IconSearchLive do
 
   def handle_event("toggle_basket", %{"id" => id}, socket) do
     id = to_string(id)
+    was_member? = MapSet.member?(socket.assigns.basket_ids, id)
 
     new_basket =
-      if MapSet.member?(socket.assigns.basket_ids, id) do
+      if was_member? do
         Enum.reject(socket.assigns.basket, &(to_string(&1.icon_id) == id))
       else
         case Enum.find(socket.assigns.icons, &(to_string(&1.icon_id) == id)) do
@@ -459,6 +526,10 @@ defmodule PureAdminIconsWeb.IconSearchLive do
           icon -> socket.assigns.basket ++ [icon]
         end
       end
+
+    # Track add/remove — but only when the basket actually changed (a "toggle on"
+    # for an icon not on the current page is a no-op and shouldn't record an add).
+    maybe_track_basket(socket, id, was_member?, length(new_basket) != length(socket.assigns.basket))
 
     {:noreply, put_basket(socket, new_basket)}
   end
@@ -516,13 +587,22 @@ defmodule PureAdminIconsWeb.IconSearchLive do
       end
 
     icon_id_int = String.to_integer(icon_id)
+    session_uid = socket.assigns[:session_uid]
+    utm = socket.assigns[:utm_data]
 
     Task.start(fn ->
       Enum.each(sizes, fn size_opt ->
         case Icons.track_action(icon_id_int, "download", "web",
-               size: size_opt, surface: surface, format: format) do
+               size: size_opt,
+               surface: surface,
+               format: format,
+               session_uid: session_uid,
+               utm: utm
+             ) do
           :ok ->
-            Logger.info("[metrics] track_download OK icon_id=#{icon_id} size=#{inspect(size_opt)} #{surface}/#{format}")
+            Logger.info(
+              "[metrics] track_download OK icon_id=#{icon_id} size=#{inspect(size_opt)} #{surface}/#{format}"
+            )
 
           {:error, reason} ->
             Logger.error("[metrics] track_download FAILED icon_id=#{icon_id}: #{inspect(reason)}")
@@ -554,12 +634,22 @@ defmodule PureAdminIconsWeb.IconSearchLive do
       end
 
     ids = icon_ids |> List.wrap() |> Enum.map(&metric_icon_id/1) |> Enum.reject(&is_nil/1)
+    session_uid = socket.assigns[:session_uid]
+    utm = socket.assigns[:utm_data]
 
-    Logger.info("[metrics] track_download_batch icons=#{length(ids)} sizes=#{inspect(sizes)} #{surface}/#{format}")
+    Logger.info(
+      "[metrics] track_download_batch icons=#{length(ids)} sizes=#{inspect(sizes)} #{surface}/#{format}"
+    )
 
     Task.start(fn ->
       for id <- ids, size <- sizes do
-        Icons.track_action(id, "download", "web", size: size, surface: surface, format: format)
+        Icons.track_action(id, "download", "web",
+          size: size,
+          surface: surface,
+          format: format,
+          session_uid: session_uid,
+          utm: utm
+        )
       end
     end)
 
@@ -570,9 +660,11 @@ defmodule PureAdminIconsWeb.IconSearchLive do
     require Logger
     Logger.info("[metrics] track_copy icon_id=#{icon_id} platform=#{platform}")
     size = params["size"]
+    session_uid = socket.assigns[:session_uid]
+    utm = socket.assigns[:utm_data]
 
     Task.start(fn ->
-      opts = [platform: platform]
+      opts = [platform: platform, session_uid: session_uid, utm: utm]
 
       opts =
         case size do
@@ -679,7 +771,17 @@ defmodule PureAdminIconsWeb.IconSearchLive do
   end
 
   defp parse_platform_prefs(raw) when is_map(raw) do
-    platform_keys = ["ios", "android", "react", "vue", "svelte", "cssclass", "htmltag", "filename"]
+    platform_keys = [
+      "ios",
+      "android",
+      "react",
+      "vue",
+      "svelte",
+      "cssclass",
+      "htmltag",
+      "filename"
+    ]
+
     is_flat = raw |> Map.keys() |> Enum.any?(&(&1 in platform_keys))
 
     flat =
@@ -768,7 +870,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
             >
               {t("iconSearch.messages.mcpPromptLink")}
             </a>
-             {t("iconSearch.messages.mcpPromptSuffix")}
+            {t("iconSearch.messages.mcpPromptSuffix")}
           </p>
         </div>
 
@@ -827,7 +929,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                       d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
                     />
                   </svg>
-                   <span class="hidden sm:inline">{t("iconSearch.buttons.filters")}</span>
+                  <span class="hidden sm:inline">{t("iconSearch.buttons.filters")}</span>
                 </button>
               </div>
 
@@ -851,7 +953,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                       d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
                     />
                   </svg>
-                   <span class="hidden sm:inline">{t("iconSearch.buttons.grid")}</span>
+                  <span class="hidden sm:inline">{t("iconSearch.buttons.grid")}</span>
                 </button>
                 <button
                   phx-click="toggle_view"
@@ -872,7 +974,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                       d="M4 6h16M4 10h16M4 14h16M4 18h16"
                     />
                   </svg>
-                   <span class="hidden sm:inline">{t("iconSearch.buttons.list")}</span>
+                  <span class="hidden sm:inline">{t("iconSearch.buttons.list")}</span>
                 </button>
               </div>
             </div>
@@ -1374,7 +1476,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                     >
                       {icon_set.title}
                     </a>
-                     <span class="text-base-content/30">({icon_set.icon_count})</span>
+                    <span class="text-base-content/30">({icon_set.icon_count})</span>
                   </li>
                 <% end %>
               </ul>
@@ -1719,7 +1821,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                 <span class="badge badge-sm" style={IconSets.Color.badge_style(icon.icon_set_code)}>
                   {icon.icon_set_code}
                 </span>
-                 <span class="badge badge-sm badge-neutral capitalize">{icon.style_code}</span>
+                <span class="badge badge-sm badge-neutral capitalize">{icon.style_code}</span>
               </div>
             </div>
 

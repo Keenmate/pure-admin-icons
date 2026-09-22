@@ -9,7 +9,7 @@ defmodule PureAdminIcons.SearchMetricsCollector do
 
   require Logger
 
-  alias Database.DbContext
+  alias PureAdminIcons.Audit
 
   @flush_interval :timer.seconds(30)
   @max_buffer_size 100
@@ -22,9 +22,13 @@ defmodule PureAdminIcons.SearchMetricsCollector do
 
   @doc """
   Record a search query metric. This is non-blocking.
+
+  `session_uid` groups the search into an `audit.session` (may be `nil` for
+  ungrouped API traffic). `opts`: `:size`, `:style`, `:result_count`,
+  `:icon_set`, `:utm`.
   """
-  def record(query, size, style, result_count, source_code, icon_set_code \\ nil) do
-    GenServer.cast(__MODULE__, {:record, query, size, style, result_count, source_code, icon_set_code})
+  def record(session_uid, source_code, query, opts \\ []) do
+    GenServer.cast(__MODULE__, {:record, session_uid, source_code, query, opts})
   end
 
   # Server Callbacks
@@ -36,14 +40,16 @@ defmodule PureAdminIcons.SearchMetricsCollector do
   end
 
   @impl true
-  def handle_cast({:record, query, size, style, result_count, source_code, icon_set_code}, buffer) do
+  def handle_cast({:record, session_uid, source_code, query, opts}, buffer) do
     entry = %{
-      query: query,
-      size: size,
-      style: style,
-      result_count: result_count,
+      session_uid: session_uid,
       source_code: source_code,
-      icon_set_code: icon_set_code
+      query: query,
+      size: opts[:size],
+      style: opts[:style],
+      result_count: opts[:result_count],
+      icon_set: opts[:icon_set],
+      utm: opts[:utm]
     }
 
     new_buffer = [entry | buffer]
@@ -82,20 +88,12 @@ defmodule PureAdminIcons.SearchMetricsCollector do
     {ok_count, errors} =
       Enum.reduce(buffer, {0, []}, fn entry, {ok, errs} ->
         try do
-          # Pass nils (not :eg_value_not_provided) — the generated DbContext
-          # filters out :eg_value_not_provided and builds positional $N
-          # placeholders, which collapses positions when intermediate args are
-          # absent but later ones are present (e.g. size=nil but
-          # icon_set_code="fontawesome" lands "fontawesome" in _size int).
-          # nil is kept by the filter and arrives as SQL NULL, letting the SP
-          # apply its `default null` while preserving argument order.
-          case DbContext.track_search(
-                 entry.query,
-                 entry.result_count,
-                 entry.source_code,
-                 entry.size,
-                 entry.style,
-                 entry.icon_set_code
+          case Audit.track_search(entry.session_uid, entry.source_code, entry.query,
+                 result_count: entry.result_count,
+                 size: entry.size,
+                 style: entry.style,
+                 icon_set: entry.icon_set,
+                 utm: entry.utm
                ) do
             {:ok, _} -> {ok + 1, errs}
             {:error, reason} -> {ok, [{entry, reason} | errs]}

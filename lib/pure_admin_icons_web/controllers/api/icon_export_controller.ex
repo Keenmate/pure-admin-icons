@@ -32,8 +32,9 @@ defmodule PureAdminIconsWeb.API.IconExportController do
   require Logger
 
   alias Database.DbContext
-  alias PureAdminIcons.{Icons, RateLimiter, Rasterizer}
+  alias PureAdminIcons.{Audit, Icons, RateLimiter, Rasterizer}
   alias PureAdminIcons.Icons.Icon
+  alias PureAdminIconsWeb.ClientInfo
 
   @max_units 200
   @max_icons 500
@@ -48,7 +49,7 @@ defmodule PureAdminIconsWeb.API.IconExportController do
          {:ok, icons} <- validate_icons(icons),
          :ok <- check_units(icons, sizes),
          {:ok, models} <- DbContext.get_icon_details_by_keys(icons) do
-      case build_png_zip(icons, models, sizes) do
+      case build_png_zip(icons, models, sizes, ensure_api_session(conn)) do
         {:ok, zip} -> send_zip(conn, zip, "pure-admin-icons-pngs.zip")
         {:error, :empty} -> empty_result(conn, icons, models)
       end
@@ -66,7 +67,7 @@ defmodule PureAdminIconsWeb.API.IconExportController do
          {:ok, icons} <- validate_icons(icons),
          :ok <- check_icon_count(icons),
          {:ok, models} <- DbContext.get_icon_details_by_keys(icons) do
-      case build_svg_zip(icons, models) do
+      case build_svg_zip(icons, models, ensure_api_session(conn)) do
         {:ok, zip} -> send_zip(conn, zip, "pure-admin-icons-svgs.zip")
         {:error, :empty} -> empty_result(conn, icons, models)
       end
@@ -79,13 +80,13 @@ defmodule PureAdminIconsWeb.API.IconExportController do
 
   # --- zip assembly -------------------------------------------------------------
 
-  defp build_png_zip(icons, models, sizes) do
-    rendered = for m <- models, size <- sizes, do: png_entry(m, size)
+  defp build_png_zip(icons, models, sizes, session_uid) do
+    rendered = for m <- models, size <- sizes, do: png_entry(m, size, session_uid)
     finalize(icons, models, rendered, %{sizes: sizes}, "pure-admin-icons-pngs.zip")
   end
 
-  defp build_svg_zip(icons, models) do
-    collected = for m <- models, do: svg_entry(m)
+  defp build_svg_zip(icons, models, session_uid) do
+    collected = for m <- models, do: svg_entry(m, session_uid)
     finalize(icons, models, collected, %{}, "pure-admin-icons-svgs.zip")
   end
 
@@ -97,39 +98,55 @@ defmodule PureAdminIconsWeb.API.IconExportController do
     else
       failures = for {:error, label} <- results, do: label
       man = manifest(icons, models, Map.merge(extra, %{files: length(files), failures: failures}))
-      {:ok, {_n, zip}} = :zip.create(String.to_charlist(zip_name), [{~c"manifest.json", man} | files], [:memory])
+
+      {:ok, {_n, zip}} =
+        :zip.create(String.to_charlist(zip_name), [{~c"manifest.json", man} | files], [:memory])
+
       {:ok, zip}
     end
   end
 
-  defp png_entry(model, size) do
+  defp png_entry(model, size, session_uid) do
     label = "#{model.icon_set_code}/#{model.style_code}/#{safe_base(model.name)}-#{size}.png"
 
     with path when is_binary(path) <- source_path(model),
          true <- within_icons_dir?(path) and File.exists?(path),
          {:ok, png} <- Rasterizer.render_png(path, size) do
-      track(model, size, "png-zip")
+      track(model, size, "png-zip", session_uid)
       {:ok, {String.to_charlist(label), png}}
     else
       _ -> {:error, label}
     end
   end
 
-  defp svg_entry(model) do
+  defp svg_entry(model, session_uid) do
     label = "#{model.icon_set_code}/#{model.style_code}/#{safe_base(model.name)}.svg"
 
     with path when is_binary(path) <- source_path(model),
          true <- within_icons_dir?(path) and File.exists?(path),
          {:ok, svg} <- File.read(path) do
-      track(model, nil, "svg-zip")
+      track(model, nil, "svg-zip", session_uid)
       {:ok, {String.to_charlist(label), svg}}
     else
       _ -> {:error, label}
     end
   end
 
-  defp track(model, size, format) do
-    Icons.track_action(model.icon_id, "download", "api", size: size, surface: "direct", format: format)
+  defp track(model, size, format, session_uid) do
+    Icons.track_action(model.icon_id, "download", "api",
+      size: size,
+      surface: "direct",
+      format: format,
+      session_uid: session_uid
+    )
+  end
+
+  # Resolve + register the audit session (x-session-id, else synthetic ip:<addr>),
+  # storing the client IP so bulk exports are attributable. Returns the session_uid.
+  defp ensure_api_session(conn) do
+    {session_uid, request_data} = ClientInfo.api_session(conn)
+    Audit.ensure_session("api", session_uid, request_data: request_data)
+    session_uid
   end
 
   # Largest available source SVG → best upscale quality. Scalable single-source
@@ -178,11 +195,17 @@ defmodule PureAdminIconsWeb.API.IconExportController do
     parsed = sizes |> Enum.map(&to_int/1) |> Enum.uniq()
 
     cond do
-      Enum.any?(parsed, &is_nil/1) -> {:error, "sizes must be integers"}
-      parsed == [] -> {:error, "sizes must not be empty"}
+      Enum.any?(parsed, &is_nil/1) ->
+        {:error, "sizes must be integers"}
+
+      parsed == [] ->
+        {:error, "sizes must not be empty"}
+
       Enum.any?(parsed, &(&1 not in Rasterizer.allowed_sizes())) ->
         {:error, "allowed sizes: #{Enum.join(Rasterizer.allowed_sizes(), ", ")}"}
-      true -> {:ok, parsed}
+
+      true ->
+        {:ok, parsed}
     end
   end
 
@@ -229,7 +252,11 @@ defmodule PureAdminIconsWeb.API.IconExportController do
   defp empty_result(conn, icons, models) do
     conn
     |> put_status(422)
-    |> json(%{error: "No icons could be exported", requested: length(icons), resolved: length(models)})
+    |> json(%{
+      error: "No icons could be exported",
+      requested: length(icons),
+      resolved: length(models)
+    })
   end
 
   defp bad_request(conn, msg), do: conn |> put_status(400) |> json(%{error: msg})
@@ -244,8 +271,12 @@ defmodule PureAdminIconsWeb.API.IconExportController do
   defp handle_error(conn, {:error, {:too_many_units, got}}) do
     conn
     |> put_status(422)
-    |> json(%{error: "Batch too large", max_render_units: @max_units, requested_units: got,
-              hint: "icons × sizes must be ≤ #{@max_units}"})
+    |> json(%{
+      error: "Batch too large",
+      max_render_units: @max_units,
+      requested_units: got,
+      hint: "icons × sizes must be ≤ #{@max_units}"
+    })
   end
 
   defp handle_error(conn, {:error, {:too_many_icons, got}}) do
@@ -265,7 +296,7 @@ defmodule PureAdminIconsWeb.API.IconExportController do
 
   # --- helpers ------------------------------------------------------------------
 
-  defp rate(conn), do: RateLimiter.hit("iconzip:#{client_ip(conn)}", @rate_scale, @rate_limit)
+  defp rate(conn), do: RateLimiter.hit("iconzip:#{ClientInfo.ip(conn)}", @rate_scale, @rate_limit)
 
   defp safe_base(name) do
     name |> String.downcase() |> String.replace(~r/[^a-z0-9]+/u, "-") |> String.trim("-")
@@ -281,11 +312,4 @@ defmodule PureAdminIconsWeb.API.IconExportController do
   end
 
   defp to_int(_), do: nil
-
-  defp client_ip(conn) do
-    case Plug.Conn.get_req_header(conn, "x-forwarded-for") do
-      [forwarded | _] -> forwarded |> String.split(",") |> hd() |> String.trim()
-      [] -> conn.remote_ip |> :inet.ntoa() |> to_string()
-    end
-  end
 end

@@ -2190,6 +2190,30 @@ window.copyFromButton = function(button) {
   }
 }
 
+// Stable per-visitor session id for usage analytics (audit.session). Minted once
+// and persisted in localStorage so searches/copies/downloads group across the visit.
+function getSessionUid() {
+  let uid = localStorage.getItem("session_uid")
+  if (!uid) {
+    uid = (window.crypto && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : (Date.now().toString(36) + Math.random().toString(36).slice(2))
+    localStorage.setItem("session_uid", uid)
+  }
+  return uid
+}
+
+// utm_* query params → a compact object (keys without the utm_ prefix), or {} if none.
+function getUtm() {
+  const p = new URLSearchParams(window.location.search)
+  const utm = {}
+  for (const k of ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"]) {
+    const v = p.get(k)
+    if (v) utm[k.slice(4)] = v
+  }
+  return utm
+}
+
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 1500,
   params: {
@@ -2200,7 +2224,10 @@ const liveSocket = new LiveSocket("/live", Socket, {
     filter_styles: JSON.parse(localStorage.getItem("icon_filter_styles") || "[]"),
     filter_sizes: JSON.parse(localStorage.getItem("icon_filter_sizes") || "[]"),
     filter_icon_sets: JSON.parse(localStorage.getItem("icon_filter_icon_sets") || "[]"),
-    basket: JSON.parse(localStorage.getItem("icon_basket") || "[]")
+    basket: JSON.parse(localStorage.getItem("icon_basket") || "[]"),
+    session_uid: getSessionUid(),
+    referrer: document.referrer || null,
+    utm: getUtm()
   },
   hooks: Hooks
 })

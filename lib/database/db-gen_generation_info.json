@@ -1,6 +1,6 @@
 {
   "version": "v0.8.0-rc.4",
-  "time": "2026-09-21T23:11:40.8918416+02:00",
+  "time": "2026-09-22T21:41:47.99415+02:00",
   "routines": [
     {
       "RowNumber": 1,
@@ -3688,21 +3688,6 @@
     {
       "RowNumber": 1,
       "RoutineSchema": "public",
-      "RoutineNameWithParams": "refresh_icon_metrics_cube()",
-      "HasOverload": false,
-      "RoutineName": "refresh_icon_metrics_cube",
-      "SpecificName": "",
-      "DataType": "",
-      "UdtTypeScheme": "",
-      "UdtTypeName": "",
-      "ParamCount": 0,
-      "FuncType": "procedure",
-      "InParameters": null,
-      "OutParameters": null
-    },
-    {
-      "RowNumber": 1,
-      "RoutineSchema": "public",
       "RoutineNameWithParams": "search_icons(text,int4,int4)",
       "HasOverload": false,
       "RoutineName": "search_icons",
@@ -4556,134 +4541,6 @@
     {
       "RowNumber": 1,
       "RoutineSchema": "public",
-      "RoutineNameWithParams": "track_icon_action(int8,text,text,int4,text,text)",
-      "HasOverload": false,
-      "RoutineName": "track_icon_action",
-      "SpecificName": "",
-      "DataType": "",
-      "UdtTypeScheme": "",
-      "UdtTypeName": "",
-      "ParamCount": 6,
-      "FuncType": "procedure",
-      "InParameters": [
-        {
-          "OrdinalPosition": 1,
-          "Name": "_icon_id",
-          "Mode": "IN",
-          "UDTName": "int8",
-          "IsNullable": false,
-          "IsOptional": false
-        },
-        {
-          "OrdinalPosition": 2,
-          "Name": "_action_code",
-          "Mode": "IN",
-          "UDTName": "text",
-          "IsNullable": false,
-          "IsOptional": false
-        },
-        {
-          "OrdinalPosition": 3,
-          "Name": "_source_code",
-          "Mode": "IN",
-          "UDTName": "text",
-          "IsNullable": false,
-          "IsOptional": false
-        },
-        {
-          "OrdinalPosition": 4,
-          "Name": "_size",
-          "Mode": "IN",
-          "UDTName": "int4",
-          "IsNullable": false,
-          "IsOptional": true
-        },
-        {
-          "OrdinalPosition": 5,
-          "Name": "_surface_code",
-          "Mode": "IN",
-          "UDTName": "text",
-          "IsNullable": false,
-          "IsOptional": true
-        },
-        {
-          "OrdinalPosition": 6,
-          "Name": "_format_code",
-          "Mode": "IN",
-          "UDTName": "text",
-          "IsNullable": false,
-          "IsOptional": true
-        }
-      ],
-      "OutParameters": null
-    },
-    {
-      "RowNumber": 1,
-      "RoutineSchema": "public",
-      "RoutineNameWithParams": "track_search(text,int4,text,int4,text,text)",
-      "HasOverload": false,
-      "RoutineName": "track_search",
-      "SpecificName": "",
-      "DataType": "",
-      "UdtTypeScheme": "",
-      "UdtTypeName": "",
-      "ParamCount": 6,
-      "FuncType": "procedure",
-      "InParameters": [
-        {
-          "OrdinalPosition": 1,
-          "Name": "_query",
-          "Mode": "IN",
-          "UDTName": "text",
-          "IsNullable": false,
-          "IsOptional": false
-        },
-        {
-          "OrdinalPosition": 2,
-          "Name": "_result_count",
-          "Mode": "IN",
-          "UDTName": "int4",
-          "IsNullable": false,
-          "IsOptional": false
-        },
-        {
-          "OrdinalPosition": 3,
-          "Name": "_source_code",
-          "Mode": "IN",
-          "UDTName": "text",
-          "IsNullable": false,
-          "IsOptional": false
-        },
-        {
-          "OrdinalPosition": 4,
-          "Name": "_size",
-          "Mode": "IN",
-          "UDTName": "int4",
-          "IsNullable": false,
-          "IsOptional": true
-        },
-        {
-          "OrdinalPosition": 5,
-          "Name": "_style",
-          "Mode": "IN",
-          "UDTName": "text",
-          "IsNullable": false,
-          "IsOptional": true
-        },
-        {
-          "OrdinalPosition": 6,
-          "Name": "_icon_set_code",
-          "Mode": "IN",
-          "UDTName": "text",
-          "IsNullable": false,
-          "IsOptional": true
-        }
-      ],
-      "OutParameters": null
-    },
-    {
-      "RowNumber": 1,
-      "RoutineSchema": "public",
       "RoutineNameWithParams": "update_job_run(int8,text,jsonb,jsonb)",
       "HasOverload": false,
       "RoutineName": "update_job_run",
@@ -5339,6 +5196,374 @@
           "IsOptional": false
         }
       ]
+    },
+    {
+      "RowNumber": 1,
+      "RoutineSchema": "audit",
+      "RoutineNameWithParams": "create_event(text,text,text,jsonb,jsonb,text)",
+      "HasOverload": false,
+      "RoutineName": "create_event",
+      "SpecificName": "",
+      "DataType": "",
+      "UdtTypeScheme": "",
+      "UdtTypeName": "",
+      "ParamCount": 6,
+      "FuncType": "procedure",
+      "InParameters": [
+        {
+          "OrdinalPosition": 1,
+          "Name": "_session_uid",
+          "Mode": "IN",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 2,
+          "Name": "_source_code",
+          "Mode": "IN",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 3,
+          "Name": "_event_type_code",
+          "Mode": "IN",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 4,
+          "Name": "_event_data",
+          "Mode": "IN",
+          "UDTName": "jsonb",
+          "IsNullable": false,
+          "IsOptional": true
+        },
+        {
+          "OrdinalPosition": 5,
+          "Name": "_utm_data",
+          "Mode": "IN",
+          "UDTName": "jsonb",
+          "IsNullable": false,
+          "IsOptional": true
+        },
+        {
+          "OrdinalPosition": 6,
+          "Name": "_created_by",
+          "Mode": "IN",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": true
+        }
+      ],
+      "OutParameters": null
+    },
+    {
+      "RowNumber": 1,
+      "RoutineSchema": "audit",
+      "RoutineNameWithParams": "create_icon_action_event(text,text,int8,text,int4,text,text,text,jsonb,text)",
+      "HasOverload": false,
+      "RoutineName": "create_icon_action_event",
+      "SpecificName": "",
+      "DataType": "",
+      "UdtTypeScheme": "",
+      "UdtTypeName": "",
+      "ParamCount": 10,
+      "FuncType": "procedure",
+      "InParameters": [
+        {
+          "OrdinalPosition": 1,
+          "Name": "_session_uid",
+          "Mode": "IN",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 2,
+          "Name": "_source_code",
+          "Mode": "IN",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 3,
+          "Name": "_icon_id",
+          "Mode": "IN",
+          "UDTName": "int8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 4,
+          "Name": "_action_code",
+          "Mode": "IN",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 5,
+          "Name": "_size",
+          "Mode": "IN",
+          "UDTName": "int4",
+          "IsNullable": false,
+          "IsOptional": true
+        },
+        {
+          "OrdinalPosition": 6,
+          "Name": "_surface_code",
+          "Mode": "IN",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": true
+        },
+        {
+          "OrdinalPosition": 7,
+          "Name": "_format_code",
+          "Mode": "IN",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": true
+        },
+        {
+          "OrdinalPosition": 8,
+          "Name": "_platform_code",
+          "Mode": "IN",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": true
+        },
+        {
+          "OrdinalPosition": 9,
+          "Name": "_utm_data",
+          "Mode": "IN",
+          "UDTName": "jsonb",
+          "IsNullable": false,
+          "IsOptional": true
+        },
+        {
+          "OrdinalPosition": 10,
+          "Name": "_created_by",
+          "Mode": "IN",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": true
+        }
+      ],
+      "OutParameters": null
+    },
+    {
+      "RowNumber": 1,
+      "RoutineSchema": "audit",
+      "RoutineNameWithParams": "create_icon_event(text,text,int8,text,jsonb,text)",
+      "HasOverload": false,
+      "RoutineName": "create_icon_event",
+      "SpecificName": "",
+      "DataType": "",
+      "UdtTypeScheme": "",
+      "UdtTypeName": "",
+      "ParamCount": 6,
+      "FuncType": "procedure",
+      "InParameters": [
+        {
+          "OrdinalPosition": 1,
+          "Name": "_session_uid",
+          "Mode": "IN",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 2,
+          "Name": "_source_code",
+          "Mode": "IN",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 3,
+          "Name": "_icon_id",
+          "Mode": "IN",
+          "UDTName": "int8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 4,
+          "Name": "_event_type_code",
+          "Mode": "IN",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 5,
+          "Name": "_utm_data",
+          "Mode": "IN",
+          "UDTName": "jsonb",
+          "IsNullable": false,
+          "IsOptional": true
+        },
+        {
+          "OrdinalPosition": 6,
+          "Name": "_created_by",
+          "Mode": "IN",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": true
+        }
+      ],
+      "OutParameters": null
+    },
+    {
+      "RowNumber": 1,
+      "RoutineSchema": "audit",
+      "RoutineNameWithParams": "create_search_event(text,text,text,int4,int4,text,text,jsonb,text)",
+      "HasOverload": false,
+      "RoutineName": "create_search_event",
+      "SpecificName": "",
+      "DataType": "",
+      "UdtTypeScheme": "",
+      "UdtTypeName": "",
+      "ParamCount": 9,
+      "FuncType": "procedure",
+      "InParameters": [
+        {
+          "OrdinalPosition": 1,
+          "Name": "_session_uid",
+          "Mode": "IN",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 2,
+          "Name": "_source_code",
+          "Mode": "IN",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 3,
+          "Name": "_query",
+          "Mode": "IN",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 4,
+          "Name": "_result_count",
+          "Mode": "IN",
+          "UDTName": "int4",
+          "IsNullable": false,
+          "IsOptional": true
+        },
+        {
+          "OrdinalPosition": 5,
+          "Name": "_size",
+          "Mode": "IN",
+          "UDTName": "int4",
+          "IsNullable": false,
+          "IsOptional": true
+        },
+        {
+          "OrdinalPosition": 6,
+          "Name": "_style",
+          "Mode": "IN",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": true
+        },
+        {
+          "OrdinalPosition": 7,
+          "Name": "_icon_set_code",
+          "Mode": "IN",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": true
+        },
+        {
+          "OrdinalPosition": 8,
+          "Name": "_utm_data",
+          "Mode": "IN",
+          "UDTName": "jsonb",
+          "IsNullable": false,
+          "IsOptional": true
+        },
+        {
+          "OrdinalPosition": 9,
+          "Name": "_created_by",
+          "Mode": "IN",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": true
+        }
+      ],
+      "OutParameters": null
+    },
+    {
+      "RowNumber": 1,
+      "RoutineSchema": "audit",
+      "RoutineNameWithParams": "ensure_session(text,text,jsonb,jsonb,text)",
+      "HasOverload": false,
+      "RoutineName": "ensure_session",
+      "SpecificName": "",
+      "DataType": "text",
+      "UdtTypeScheme": "pg_catalog",
+      "UdtTypeName": "text",
+      "ParamCount": 5,
+      "FuncType": "function",
+      "InParameters": [
+        {
+          "OrdinalPosition": 1,
+          "Name": "_source_code",
+          "Mode": "IN",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 2,
+          "Name": "_session_uid",
+          "Mode": "IN",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": true
+        },
+        {
+          "OrdinalPosition": 3,
+          "Name": "_user_data",
+          "Mode": "IN",
+          "UDTName": "jsonb",
+          "IsNullable": false,
+          "IsOptional": true
+        },
+        {
+          "OrdinalPosition": 4,
+          "Name": "_request_data",
+          "Mode": "IN",
+          "UDTName": "jsonb",
+          "IsNullable": false,
+          "IsOptional": true
+        },
+        {
+          "OrdinalPosition": 5,
+          "Name": "_created_by",
+          "Mode": "IN",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": true
+        }
+      ],
+      "OutParameters": null
     }
   ],
   "tables": null

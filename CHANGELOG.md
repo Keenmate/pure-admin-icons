@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-22 — v0.6.0 — Audit-log usage metrics (sessions + IP); live stats
+
+**Metrics moved to a session-aware event log.** Replaced the ad-hoc `search_metric` / `icon_metric` / `icon_metric_cube` trio with a generic `audit.*` event log (DB `v1.21`/`v1.22`) modelled on gcp-documenthub's audit schema: one `audit.session` per visitor and an append-only `audit.event` stream carrying an `event_type_code` + a jsonb identity **snapshot**, so metrics survive an icon being deleted/re-synced with no denormalization dance. Copy, download, search, **and now icon-detail-open + basket add/remove** are all events. `/stats` (`get_stats_overview`, `get_popular_icons`, …) is computed **live** off the log — no cube, no daily-refresh staleness (the `MetricsCubeRefresher` GenServer + 4 AM job are gone).
+
+**Fixed the "strange numbers".** Web "searches" were massively over-counted: search tracking lived in `handle_params`, which fires on every `push_patch` — filter toggles, pagination, initial load, and each debounced keystroke — so ~68% of logged "searches" were empty-query navigation. Searches are now recorded only for a **real, changed** query, and `get_stats_overview` counts them as `count(distinct (session, nrm_query))` per period so repeat/keystroke churn can't inflate. Backfill of history dropped the empty-query rows.
+
+**Sessions + client IP.** A stable per-visitor `session_uid` is minted/persisted in the browser and passed via LiveView connect params; the API honours `x-session-id`, else synthesizes `ip:<addr>` so anonymous API traffic still groups. Sessions store `referrer`/`utm` and the **client IP** (via `:peer_data` + `:x_headers` on the socket / `x-forwarded-for` on the API — we're behind Traefik) for geo (countries, resolved offline) and abuse attribution. New `PureAdminIconsWeb.ClientInfo` centralizes IP/session resolution.
+
+**Notes.** DB writers follow the KeenMate PG guidelines (`ensure_session`, `create_*_event`, query-driven `ix_event_*` indexes, created-only append-only tables). The old three tables are renamed `*_old` (kept for verification, dropped later). No MCP change yet — `x-session-id` support lands after web is validated.
+
+---
+
 ## 2026-09-21 — v0.5.1 — Fix PNG export against resvg 0.45
 
 **PNG rasterization argument fix.** `Rasterizer` invoked `resvg --width N --height N -- <in> <out>`, but resvg 0.45.x (Debian trixie) treats the `--` end-of-options separator as the input filename and fails with "failed to open the provided file" — so every `/api/icons/png-zip` request 500'd/422'd in production while SVG export worked. Dropped the `--` (both paths are always absolute and server-controlled, so there's no `-`-prefixed-path injection surface to guard) and switched to the short `-w`/`-h` flags. SVG export, metrics, and the DB changes were unaffected.

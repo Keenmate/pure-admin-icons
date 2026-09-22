@@ -32,9 +32,6 @@
         "get_icon_primary_name": true,
         "get_last_sync": true,
         "get_icon_sets": true,
-        "track_icon_action": true,
-        "track_search": true,
-        "refresh_icon_metrics_cube": true,
         "get_icon_metrics": true,
         "get_popular_icons": true,
         "get_stats_overview": true,
@@ -51,6 +48,16 @@
       "Schema": "stage",
       "Functions": {
         "process_icon_import": true
+      }
+    },
+    {
+      "Schema": "audit",
+      "Functions": {
+        "ensure_session": true,
+        "create_event": true,
+        "create_search_event": true,
+        "create_icon_action_event": true,
+        "create_icon_event": true
       }
     }
   ],

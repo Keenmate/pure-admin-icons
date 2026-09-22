@@ -590,40 +590,6 @@ defmodule Database.DbContext do
 
 
   @doc """
-  Calls database procedure public.refresh_icon_metrics_cube
-  
-  Returns: {:ok, any()} | {:error, any()}
-  
-  """
-  @spec refresh_icon_metrics_cube(keyword()) :: {:ok, any()} | {:error, any()}
-  def refresh_icon_metrics_cube(query_opts \\ []) do
-    Logger.debug("Calling database routine", routine_name: "refresh_icon_metrics_cube")
-
-    sql_params_str =
-      [
-
-      ]
-      |> Enum.filter(fn {_name, value} -> value != :eg_value_not_provided end)
-      |> Enum.with_index(1)
-      |> Enum.map(fn {_tuple, index} -> "$#{index}" end)
-      |> Enum.join(", ")
-
-    sql_query_params =
-      [
-
-      ]
-      |> Enum.filter(fn value -> value != :eg_value_not_provided end)
-
-    query(
-      "call public.refresh_icon_metrics_cube(#{sql_params_str})",
-      sql_query_params,
-      query_opts
-    )
-    
-  end
-
-
-  @doc """
   Calls database function public.search_icons
   
   Returns: {:ok, [%Models.SearchIconsModel{}]} | {:error, any()}
@@ -659,94 +625,6 @@ defmodule Database.DbContext do
     )
     
     |> Processors.SearchIconsProcessor.parse_result()
-    
-  end
-
-
-  @doc """
-  Calls database procedure public.track_icon_action
-  
-  Returns: {:ok, any()} | {:error, any()}
-  
-  """
-  @spec track_icon_action(integer(), String.t(), String.t(), integer() | :eg_value_not_provided, String.t() | :eg_value_not_provided, String.t() | :eg_value_not_provided, keyword()) :: {:ok, any()} | {:error, any()}
-  def track_icon_action(icon_id, action_code, source_code, size \\ :eg_value_not_provided, surface_code \\ :eg_value_not_provided, format_code \\ :eg_value_not_provided, query_opts \\ []) do
-    Logger.debug("Calling database routine", routine_name: "track_icon_action")
-
-    sql_params_str =
-      [
-        {"_icon_id", icon_id},
-        {"_action_code", action_code},
-        {"_source_code", source_code},
-        {"_size", size},
-        {"_surface_code", surface_code},
-        {"_format_code", format_code}
-      ]
-      |> Enum.filter(fn {_name, value} -> value != :eg_value_not_provided end)
-      |> Enum.with_index(1)
-      |> Enum.map(fn {_tuple, index} -> "$#{index}" end)
-      |> Enum.join(", ")
-
-    sql_query_params =
-      [
-        icon_id,
-        action_code,
-        source_code,
-        size,
-        surface_code,
-        format_code
-      ]
-      |> Enum.filter(fn value -> value != :eg_value_not_provided end)
-
-    query(
-      "call public.track_icon_action(#{sql_params_str})",
-      sql_query_params,
-      query_opts
-    )
-    
-  end
-
-
-  @doc """
-  Calls database procedure public.track_search
-  
-  Returns: {:ok, any()} | {:error, any()}
-  
-  """
-  @spec track_search(String.t(), integer(), String.t(), integer() | :eg_value_not_provided, String.t() | :eg_value_not_provided, String.t() | :eg_value_not_provided, keyword()) :: {:ok, any()} | {:error, any()}
-  def track_search(query, result_count, source_code, size \\ :eg_value_not_provided, style \\ :eg_value_not_provided, icon_set_code \\ :eg_value_not_provided, query_opts \\ []) do
-    Logger.debug("Calling database routine", routine_name: "track_search")
-
-    sql_params_str =
-      [
-        {"_query", query},
-        {"_result_count", result_count},
-        {"_source_code", source_code},
-        {"_size", size},
-        {"_style", style},
-        {"_icon_set_code", icon_set_code}
-      ]
-      |> Enum.filter(fn {_name, value} -> value != :eg_value_not_provided end)
-      |> Enum.with_index(1)
-      |> Enum.map(fn {_tuple, index} -> "$#{index}" end)
-      |> Enum.join(", ")
-
-    sql_query_params =
-      [
-        query,
-        result_count,
-        source_code,
-        size,
-        style,
-        icon_set_code
-      ]
-      |> Enum.filter(fn value -> value != :eg_value_not_provided end)
-
-    query(
-      "call public.track_search(#{sql_params_str})",
-      sql_query_params,
-      query_opts
-    )
     
   end
 
@@ -825,6 +703,240 @@ defmodule Database.DbContext do
     )
     
     |> Processors.StageProcessIconImportProcessor.parse_result()
+    
+  end
+
+
+  @doc """
+  Calls database procedure audit.create_event
+  
+  Returns: {:ok, any()} | {:error, any()}
+  
+  """
+  @spec audit_create_event(String.t(), String.t(), String.t(), map() | list() | :eg_value_not_provided, map() | list() | :eg_value_not_provided, String.t() | :eg_value_not_provided, keyword()) :: {:ok, any()} | {:error, any()}
+  def audit_create_event(session_uid, source_code, event_type_code, event_data \\ :eg_value_not_provided, utm_data \\ :eg_value_not_provided, created_by \\ :eg_value_not_provided, query_opts \\ []) do
+    Logger.debug("Calling database routine", routine_name: "create_event")
+
+    sql_params_str =
+      [
+        {"_session_uid", session_uid},
+        {"_source_code", source_code},
+        {"_event_type_code", event_type_code},
+        {"_event_data", event_data},
+        {"_utm_data", utm_data},
+        {"_created_by", created_by}
+      ]
+      |> Enum.filter(fn {_name, value} -> value != :eg_value_not_provided end)
+      |> Enum.with_index(1)
+      |> Enum.map(fn {_tuple, index} -> "$#{index}" end)
+      |> Enum.join(", ")
+
+    sql_query_params =
+      [
+        session_uid,
+        source_code,
+        event_type_code,
+        event_data,
+        utm_data,
+        created_by
+      ]
+      |> Enum.filter(fn value -> value != :eg_value_not_provided end)
+
+    query(
+      "call audit.create_event(#{sql_params_str})",
+      sql_query_params,
+      query_opts
+    )
+    
+  end
+
+
+  @doc """
+  Calls database procedure audit.create_icon_action_event
+  
+  Returns: {:ok, any()} | {:error, any()}
+  
+  """
+  @spec audit_create_icon_action_event(String.t(), String.t(), integer(), String.t(), integer() | :eg_value_not_provided, String.t() | :eg_value_not_provided, String.t() | :eg_value_not_provided, String.t() | :eg_value_not_provided, map() | list() | :eg_value_not_provided, String.t() | :eg_value_not_provided, keyword()) :: {:ok, any()} | {:error, any()}
+  def audit_create_icon_action_event(session_uid, source_code, icon_id, action_code, size \\ :eg_value_not_provided, surface_code \\ :eg_value_not_provided, format_code \\ :eg_value_not_provided, platform_code \\ :eg_value_not_provided, utm_data \\ :eg_value_not_provided, created_by \\ :eg_value_not_provided, query_opts \\ []) do
+    Logger.debug("Calling database routine", routine_name: "create_icon_action_event")
+
+    sql_params_str =
+      [
+        {"_session_uid", session_uid},
+        {"_source_code", source_code},
+        {"_icon_id", icon_id},
+        {"_action_code", action_code},
+        {"_size", size},
+        {"_surface_code", surface_code},
+        {"_format_code", format_code},
+        {"_platform_code", platform_code},
+        {"_utm_data", utm_data},
+        {"_created_by", created_by}
+      ]
+      |> Enum.filter(fn {_name, value} -> value != :eg_value_not_provided end)
+      |> Enum.with_index(1)
+      |> Enum.map(fn {_tuple, index} -> "$#{index}" end)
+      |> Enum.join(", ")
+
+    sql_query_params =
+      [
+        session_uid,
+        source_code,
+        icon_id,
+        action_code,
+        size,
+        surface_code,
+        format_code,
+        platform_code,
+        utm_data,
+        created_by
+      ]
+      |> Enum.filter(fn value -> value != :eg_value_not_provided end)
+
+    query(
+      "call audit.create_icon_action_event(#{sql_params_str})",
+      sql_query_params,
+      query_opts
+    )
+    
+  end
+
+
+  @doc """
+  Calls database procedure audit.create_icon_event
+  
+  Returns: {:ok, any()} | {:error, any()}
+  
+  """
+  @spec audit_create_icon_event(String.t(), String.t(), integer(), String.t(), map() | list() | :eg_value_not_provided, String.t() | :eg_value_not_provided, keyword()) :: {:ok, any()} | {:error, any()}
+  def audit_create_icon_event(session_uid, source_code, icon_id, event_type_code, utm_data \\ :eg_value_not_provided, created_by \\ :eg_value_not_provided, query_opts \\ []) do
+    Logger.debug("Calling database routine", routine_name: "create_icon_event")
+
+    sql_params_str =
+      [
+        {"_session_uid", session_uid},
+        {"_source_code", source_code},
+        {"_icon_id", icon_id},
+        {"_event_type_code", event_type_code},
+        {"_utm_data", utm_data},
+        {"_created_by", created_by}
+      ]
+      |> Enum.filter(fn {_name, value} -> value != :eg_value_not_provided end)
+      |> Enum.with_index(1)
+      |> Enum.map(fn {_tuple, index} -> "$#{index}" end)
+      |> Enum.join(", ")
+
+    sql_query_params =
+      [
+        session_uid,
+        source_code,
+        icon_id,
+        event_type_code,
+        utm_data,
+        created_by
+      ]
+      |> Enum.filter(fn value -> value != :eg_value_not_provided end)
+
+    query(
+      "call audit.create_icon_event(#{sql_params_str})",
+      sql_query_params,
+      query_opts
+    )
+    
+  end
+
+
+  @doc """
+  Calls database procedure audit.create_search_event
+  
+  Returns: {:ok, any()} | {:error, any()}
+  
+  """
+  @spec audit_create_search_event(String.t(), String.t(), String.t(), integer() | :eg_value_not_provided, integer() | :eg_value_not_provided, String.t() | :eg_value_not_provided, String.t() | :eg_value_not_provided, map() | list() | :eg_value_not_provided, String.t() | :eg_value_not_provided, keyword()) :: {:ok, any()} | {:error, any()}
+  def audit_create_search_event(session_uid, source_code, query, result_count \\ :eg_value_not_provided, size \\ :eg_value_not_provided, style \\ :eg_value_not_provided, icon_set_code \\ :eg_value_not_provided, utm_data \\ :eg_value_not_provided, created_by \\ :eg_value_not_provided, query_opts \\ []) do
+    Logger.debug("Calling database routine", routine_name: "create_search_event")
+
+    sql_params_str =
+      [
+        {"_session_uid", session_uid},
+        {"_source_code", source_code},
+        {"_query", query},
+        {"_result_count", result_count},
+        {"_size", size},
+        {"_style", style},
+        {"_icon_set_code", icon_set_code},
+        {"_utm_data", utm_data},
+        {"_created_by", created_by}
+      ]
+      |> Enum.filter(fn {_name, value} -> value != :eg_value_not_provided end)
+      |> Enum.with_index(1)
+      |> Enum.map(fn {_tuple, index} -> "$#{index}" end)
+      |> Enum.join(", ")
+
+    sql_query_params =
+      [
+        session_uid,
+        source_code,
+        query,
+        result_count,
+        size,
+        style,
+        icon_set_code,
+        utm_data,
+        created_by
+      ]
+      |> Enum.filter(fn value -> value != :eg_value_not_provided end)
+
+    query(
+      "call audit.create_search_event(#{sql_params_str})",
+      sql_query_params,
+      query_opts
+    )
+    
+  end
+
+
+  @doc """
+  Calls database function audit.ensure_session
+  
+  Returns: {:ok, [%Models.AuditEnsureSessionModel{}]} | {:error, any()}
+  
+  """
+  @spec audit_ensure_session(String.t(), String.t() | :eg_value_not_provided, map() | list() | :eg_value_not_provided, map() | list() | :eg_value_not_provided, String.t() | :eg_value_not_provided, keyword()) :: {:ok, [%Models.AuditEnsureSessionModel{}]} | {:error, any()}
+  def audit_ensure_session(source_code, session_uid \\ :eg_value_not_provided, user_data \\ :eg_value_not_provided, request_data \\ :eg_value_not_provided, created_by \\ :eg_value_not_provided, query_opts \\ []) do
+    Logger.debug("Calling database routine", routine_name: "ensure_session")
+
+    sql_params_str =
+      [
+        {"_source_code", source_code},
+        {"_session_uid", session_uid},
+        {"_user_data", user_data},
+        {"_request_data", request_data},
+        {"_created_by", created_by}
+      ]
+      |> Enum.filter(fn {_name, value} -> value != :eg_value_not_provided end)
+      |> Enum.with_index(1)
+      |> Enum.map(fn {_tuple, index} -> "$#{index}" end)
+      |> Enum.join(", ")
+
+    sql_query_params =
+      [
+        source_code,
+        session_uid,
+        user_data,
+        request_data,
+        created_by
+      ]
+      |> Enum.filter(fn value -> value != :eg_value_not_provided end)
+
+    query(
+      "select * from audit.ensure_session(#{sql_params_str})",
+      sql_query_params,
+      query_opts
+    )
+    
+    |> Processors.AuditEnsureSessionProcessor.parse_result()
     
   end
 

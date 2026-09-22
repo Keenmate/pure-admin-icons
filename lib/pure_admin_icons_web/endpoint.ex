@@ -16,9 +16,11 @@ defmodule PureAdminIconsWeb.Endpoint do
   # scheme/host/port for URL generation without redirecting.
   plug Plug.RewriteOn, [:x_forwarded_host, :x_forwarded_port, :x_forwarded_proto]
 
+  # peer_data = direct socket peer (the Traefik hop in prod); x_headers carries
+  # x-forwarded-for so audit sessions can record the real client IP.
   socket "/live", Phoenix.LiveView.Socket,
-    websocket: [connect_info: [session: @session_options]],
-    longpoll: [connect_info: [session: @session_options]]
+    websocket: [connect_info: [:peer_data, :x_headers, session: @session_options]],
+    longpoll: [connect_info: [:peer_data, :x_headers, session: @session_options]]
 
   # Serve at "/" the static files from "priv/static" directory.
   #

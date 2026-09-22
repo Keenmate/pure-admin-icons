@@ -89,14 +89,9 @@ defmodule PureAdminIconsWeb.API.MaintenanceController do
     json(conn, %{status: "started", task: "clean"})
   end
 
-  defp execute_task(conn, "cube") do
-    Task.start(fn -> PureAdminIcons.Icons.refresh_metrics_cube() end)
-    json(conn, %{status: "started", task: "cube"})
-  end
-
   defp execute_task(conn, unknown) do
     conn
     |> put_status(400)
-    |> json(%{error: "Unknown task", task: unknown, available: ["sync", "sync/:icon_set", "clean", "cube"]})
+    |> json(%{error: "Unknown task", task: unknown, available: ["sync", "sync/:icon_set", "clean"]})
   end
 end

@@ -50,7 +50,4 @@ if config_env() == :prod do
   if api_key = System.get_env("MAINTENANCE_API_KEY") do
     config :pure_admin_icons, maintenance_api_key: api_key
   end
-
-  # Refresh metrics cube every 3 minutes in production
-  config :pure_admin_icons, :metrics_cube_interval, 180_000
 end

@@ -12,6 +12,7 @@ defmodule PureAdminIcons.Icons do
     page = opts[:page] || 1
     page_size = opts[:limit] || 50
     criteria_json = Jason.encode!(criteria)
+
     case DbContext.search_icons(criteria_json, page, page_size) do
       {:ok, results} -> {:ok, results}
       {:error, _} = error -> error
@@ -27,40 +28,56 @@ defmodule PureAdminIcons.Icons do
 
   defp build_search_criteria(query, opts) do
     criteria = %{}
-    criteria = if query && query != "", do: Map.put(criteria, "search_text", query), else: criteria
-    criteria = case opts[:icon_sets] do
-      nil -> criteria
-      [] -> criteria
-      sets when is_list(sets) -> Map.put(criteria, "icon_sets", sets)
-    end
-    criteria = case opts[:styles] do
-      nil -> criteria
-      [] -> criteria
-      styles when is_list(styles) -> Map.put(criteria, "styles", styles)
-    end
-    criteria = case opts[:sizes] do
-      nil -> criteria
-      [] -> criteria
-      sizes when is_list(sizes) ->
-        # Special: size 0 means "scalable icons only"
-        if 0 in sizes do
-          criteria = Map.put(criteria, "has_single_source", true)
-          # If there are also pixel sizes, include them too
-          pixel_sizes = Enum.reject(sizes, &(&1 == 0))
-          case pixel_sizes do
-            [] -> criteria
-            [size | _] -> Map.put(criteria, "size", size)
+
+    criteria =
+      if query && query != "", do: Map.put(criteria, "search_text", query), else: criteria
+
+    criteria =
+      case opts[:icon_sets] do
+        nil -> criteria
+        [] -> criteria
+        sets when is_list(sets) -> Map.put(criteria, "icon_sets", sets)
+      end
+
+    criteria =
+      case opts[:styles] do
+        nil -> criteria
+        [] -> criteria
+        styles when is_list(styles) -> Map.put(criteria, "styles", styles)
+      end
+
+    criteria =
+      case opts[:sizes] do
+        nil ->
+          criteria
+
+        [] ->
+          criteria
+
+        sizes when is_list(sizes) ->
+          # Special: size 0 means "scalable icons only"
+          if 0 in sizes do
+            criteria = Map.put(criteria, "has_single_source", true)
+            # If there are also pixel sizes, include them too
+            pixel_sizes = Enum.reject(sizes, &(&1 == 0))
+
+            case pixel_sizes do
+              [] -> criteria
+              [size | _] -> Map.put(criteria, "size", size)
+            end
+          else
+            [size | _] = sizes
+            Map.put(criteria, "size", size)
           end
-        else
-          [size | _] = sizes
-          Map.put(criteria, "size", size)
-        end
-    end
-    criteria = case opts[:categories] do
-      nil -> criteria
-      [] -> criteria
-      cats when is_list(cats) -> Map.put(criteria, "categories", cats)
-    end
+      end
+
+    criteria =
+      case opts[:categories] do
+        nil -> criteria
+        [] -> criteria
+        cats when is_list(cats) -> Map.put(criteria, "categories", cats)
+      end
+
     criteria
   end
 
@@ -74,6 +91,7 @@ defmodule PureAdminIcons.Icons do
 
   def count(opts \\ []) do
     icon_set = opts[:icon_set]
+
     case DbContext.get_icon_count(icon_set || :eg_value_not_provided) do
       {:ok, [%{get_icon_count: count}]} -> count
       {:ok, []} -> 0
@@ -84,8 +102,12 @@ defmodule PureAdminIcons.Icons do
   def counts_by_icon_set do
     case DbContext.get_icon_counts_by_set() do
       {:ok, results} ->
-        results |> Enum.map(fn %{icon_set_code: code, count: count} -> {code, count} end) |> Map.new()
-      {:error, _} -> %{}
+        results
+        |> Enum.map(fn %{icon_set_code: code, count: count} -> {code, count} end)
+        |> Map.new()
+
+      {:error, _} ->
+        %{}
     end
   end
 
@@ -135,8 +157,13 @@ defmodule PureAdminIcons.Icons do
     size = opts[:size]
     {surface, format} = split_platform(opts)
 
-    # Pass nil (not :eg_value_not_provided) so positional params stay aligned.
-    case DbContext.track_icon_action(icon_id, action, source, size, surface, format) do
+    case PureAdminIcons.Audit.track_action(opts[:session_uid], source, icon_id, action,
+           size: size,
+           surface: surface,
+           format: format,
+           platform: opts[:platform],
+           utm: opts[:utm]
+         ) do
       {:ok, _} -> :ok
       {:error, _} = error -> error
     end
@@ -161,17 +188,14 @@ defmodule PureAdminIcons.Icons do
   def icon_metrics(icon_id) do
     case DbContext.get_icon_metrics(icon_id) do
       {:ok, results} ->
-        results |> Enum.map(fn %{action_code: action, period_code: period, count: count} -> {{action, period}, count} end) |> Map.new()
-      {:error, _} -> %{}
-    end
-  end
+        results
+        |> Enum.map(fn %{action_code: action, period_code: period, count: count} ->
+          {{action, period}, count}
+        end)
+        |> Map.new()
 
-  def refresh_metrics_cube do
-    require Logger
-    Logger.info("Refreshing metrics cube...")
-    case DbContext.refresh_icon_metrics_cube() do
-      {:ok, _} -> Logger.info("Metrics cube refresh complete"); :ok
-      {:error, error} -> Logger.error("Metrics cube refresh failed: #{inspect(error)}"); {:error, error}
+      {:error, _} ->
+        %{}
     end
   end
 
@@ -254,6 +278,11 @@ defmodule PureAdminIcons.Icons do
   end
 
   def update_job_run(job_run_id, status, success_data \\ nil, fail_data \\ nil) do
-    Repo.query("SELECT public.update_job_run($1, $2, $3, $4)", [job_run_id, status, success_data, fail_data])
+    Repo.query("SELECT public.update_job_run($1, $2, $3, $4)", [
+      job_run_id,
+      status,
+      success_data,
+      fail_data
+    ])
   end
 end

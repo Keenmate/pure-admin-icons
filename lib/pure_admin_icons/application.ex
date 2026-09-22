@@ -11,7 +11,6 @@ defmodule PureAdminIcons.Application do
       {Phoenix.PubSub, name: PureAdminIcons.PubSub},
       {PureAdminIcons.RateLimiter, clean_period: :timer.minutes(1)},
       PureAdminIcons.SearchMetricsCollector,
-      PureAdminIcons.MetricsCubeRefresher,
       PureAdminIcons.Scheduler,
       {DNSCluster, query: Application.get_env(:pure_admin_icons, :dns_cluster_query) || :ignore},
       PureAdminIconsWeb.Endpoint,

@@ -66,9 +66,6 @@ config :pure_admin_icons, PureAdminIconsWeb.Endpoint,
 # Enable dev routes for dashboard and mailbox
 config :pure_admin_icons, dev_routes: true
 
-# Refresh metrics cube every 10s in dev (Quantum cron only goes to minutes)
-config :pure_admin_icons, :metrics_cube_interval, 10_000
-
 # Do not include metadata nor timestamps in development logs
 config :logger, :default_formatter, format: "[$level] $message\n"
 
