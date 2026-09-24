@@ -21,12 +21,19 @@ defmodule PureAdminIconsWeb.Docs.McpDocsLive do
 
         <div class="space-y-8">
           <div>
-            <h2 class="text-xl font-bold border-b border-base-300/50 pb-2 mb-4">{t("mcpDocs.headers.installation")}</h2>
+            <h2 class="text-xl font-bold border-b border-base-300/50 pb-2 mb-4">
+              {t("mcpDocs.headers.installation")}
+            </h2>
             <p class="text-base-content/85 text-sm mb-4">
               {t("mcpDocs.messages.installation")}
             </p>
             <p class="text-base-content/85 text-sm mb-4">
-              npm: <a href="https://www.npmjs.com/package/@keenmate/pure-admin-icons-mcp" target="_blank" class="text-primary hover:underline">@keenmate/pure-admin-icons-mcp</a>
+              npm:
+              <a
+                href="https://www.npmjs.com/package/@keenmate/pure-admin-icons-mcp"
+                target="_blank"
+                class="text-primary hover:underline"
+              >@keenmate/pure-admin-icons-mcp</a>
             </p>
           </div>
 
@@ -47,7 +54,22 @@ defmodule PureAdminIconsWeb.Docs.McpDocsLive do
           </div>
 
           <div>
-            <h2 class="text-xl font-bold border-b border-base-300/50 pb-2 mb-4">{t("mcpDocs.headers.availableTools")}</h2>
+            <h2 class="text-xl font-bold border-b border-base-300/50 pb-2 mb-4">
+              {t("mcpDocs.headers.updates")}
+            </h2>
+            <p class="text-base-content/85 text-sm mb-3">
+              {t("mcpDocs.messages.updatesCheck")}
+            </p>
+            <p class="text-base-content/85 text-sm mb-3">
+              {t("mcpDocs.messages.updatesRefresh")}
+            </p>
+            <pre class="rounded-lg px-4 py-3 text-sm overflow-x-auto bg-base-300/70 border border-base-300 shadow-sm"><code class="hljs">npm install -g @keenmate/pure-admin-icons-mcp@latest</code></pre>
+          </div>
+
+          <div>
+            <h2 class="text-xl font-bold border-b border-base-300/50 pb-2 mb-4">
+              {t("mcpDocs.headers.availableTools")}
+            </h2>
             <div class="space-y-4 text-sm">
               <div class="border-b border-base-300/30 pb-4">
                 <div class="flex items-center gap-3 mb-2">
@@ -65,7 +87,9 @@ defmodule PureAdminIconsWeb.Docs.McpDocsLive do
           </div>
 
           <div>
-            <h2 class="text-xl font-bold border-b border-base-300/50 pb-2 mb-4">{t("mcpDocs.headers.usageExample")}</h2>
+            <h2 class="text-xl font-bold border-b border-base-300/50 pb-2 mb-4">
+              {t("mcpDocs.headers.usageExample")}
+            </h2>
             <p class="text-base-content/85 text-sm mb-3">
               {t("mcpDocs.messages.usageExample")}
             </p>

@@ -48,8 +48,14 @@ defmodule PureAdminIconsWeb.Router do
     post "/icons/png-zip", IconExportController, :png_zip
     post "/icons/svg-zip", IconExportController, :svg_zip
     get "/health", HealthController, :index
+    get "/mcp/version", McpController, :version
     post "/maintenance/:task", MaintenanceController, :run
     post "/maintenance/:task/:icon_set", MaintenanceController, :run
+
+    # Catch-all: turn unmatched /api/* into a normal 404 (not a raised
+    # NoRouteError) so the X-MCP-* version headers still ride the response. Must
+    # stay last — declared routes above win. See FallbackController.
+    match :*, "/*path", FallbackController, :not_found
   end
 
   # Other scopes may use custom stacks.

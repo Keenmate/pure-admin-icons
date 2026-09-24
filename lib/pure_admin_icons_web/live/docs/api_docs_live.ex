@@ -21,7 +21,9 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
 
         <%!-- Icons --%>
         <div class="space-y-8">
-          <h2 class="text-xl font-bold border-b border-base-300/50 pb-2">{t("apiDocs.headers.icons")}</h2>
+          <h2 class="text-xl font-bold border-b border-base-300/50 pb-2">
+            {t("apiDocs.headers.icons")}
+          </h2>
 
           <.endpoint
             method="GET"
@@ -49,7 +51,9 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
 
         <%!-- Icon Sets --%>
         <div class="space-y-8 mt-10">
-          <h2 class="text-xl font-bold border-b border-base-300/50 pb-2">{t("apiDocs.headers.iconSets")}</h2>
+          <h2 class="text-xl font-bold border-b border-base-300/50 pb-2">
+            {t("apiDocs.headers.iconSets")}
+          </h2>
 
           <.endpoint
             method="GET"
@@ -62,7 +66,9 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
 
         <%!-- Response formats --%>
         <div class="space-y-8 mt-10">
-          <h2 class="text-xl font-bold border-b border-base-300/50 pb-2">{t("apiDocs.headers.responseFormats")}</h2>
+          <h2 class="text-xl font-bold border-b border-base-300/50 pb-2">
+            {t("apiDocs.headers.responseFormats")}
+          </h2>
 
           <p class="text-sm text-base-content/80 mb-4">
             {t("apiDocs.messages.formatsIntro")}
@@ -89,7 +95,9 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
 
         <%!-- Response fields --%>
         <div class="space-y-8 mt-10">
-          <h2 class="text-xl font-bold border-b border-base-300/50 pb-2">{t("apiDocs.headers.responseFields")}</h2>
+          <h2 class="text-xl font-bold border-b border-base-300/50 pb-2">
+            {t("apiDocs.headers.responseFields")}
+          </h2>
 
           <div class="space-y-4 text-sm">
             <p class="text-base-content/80">{t("apiDocs.fields.intro")}</p>
@@ -120,7 +128,9 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
 
         <%!-- Other endpoints --%>
         <div class="space-y-8 mt-10">
-          <h2 class="text-xl font-bold border-b border-base-300/50 pb-2">{t("apiDocs.headers.otherEndpoints")}</h2>
+          <h2 class="text-xl font-bold border-b border-base-300/50 pb-2">
+            {t("apiDocs.headers.otherEndpoints")}
+          </h2>
 
           <.endpoint
             method="GET"
@@ -140,6 +150,14 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
           />
 
           <.endpoint
+            method="GET"
+            path="/api/mcp/version"
+            description={t("apiDocs.descriptions.mcpVersion")}
+            params={[]}
+            example_url="/api/mcp/version"
+          />
+
+          <.endpoint
             method="POST"
             path="/api/maintenance/:task"
             description={t("apiDocs.descriptions.maintenance")}
@@ -149,6 +167,24 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
             ]}
             note={t("apiDocs.notes.maintenance")}
           />
+
+          <div class="border-t border-base-300/30 pt-6 text-sm">
+            <p class="text-base-content/80 mb-3">
+              {t("apiDocs.messages.mcpHeadersIntro")}
+            </p>
+            <div class="space-y-2 text-base-content/85">
+              <div class="flex gap-2">
+                <code class="text-primary font-mono min-w-52">X-MCP-Latest</code>
+                <span class="text-base-content/50">&mdash;</span>
+                <span>{t("apiDocs.fields.xMcpLatest")}</span>
+              </div>
+              <div class="flex gap-2">
+                <code class="text-primary font-mono min-w-52">X-MCP-Min-Supported</code>
+                <span class="text-base-content/50">&mdash;</span>
+                <span>{t("apiDocs.fields.xMcpMinSupported")}</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <%!-- AI/LLM integration --%>
@@ -164,7 +200,12 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
               <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/80 mb-2">
                 {t("apiDocs.headers.mcpServer")}
               </h3>
-              <.code_block code={~s|{\n  "mcpServers": {\n    "pure-admin-icons": {\n      "command": "npx",\n      "args": ["-y", "-p", "@keenmate/pure-admin-icons-mcp", "pure-admin-icons-mcp"]\n    }\n  }\n}|} lang="json" />
+              <.code_block
+                code={
+                  ~s|{\n  "mcpServers": {\n    "pure-admin-icons": {\n      "command": "npx",\n      "args": ["-y", "-p", "@keenmate/pure-admin-icons-mcp", "pure-admin-icons-mcp"]\n    }\n  }\n}|
+                }
+                lang="json"
+              />
             </div>
 
             <div>
@@ -179,7 +220,8 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
                 {t("apiDocs.headers.machineDocs")}
               </h3>
               <p class="text-base-content/85 text-sm">
-                <a href="/llms.txt" class="text-primary hover:underline">/llms.txt</a> &middot;
+                <a href="/llms.txt" class="text-primary hover:underline">/llms.txt</a>
+                &middot;
                 <a href="/.well-known/ai-plugin.json" class="text-primary hover:underline">/.well-known/ai-plugin.json</a>
               </p>
             </div>
@@ -223,14 +265,21 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
               <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/80 mb-2">
                 {t("apiDocs.examples.javascript")}
               </h3>
-              <.code_block code={~s|const res = await fetch('https://icons.pureadmin.io/api/icons/search?q=calendar&format=compact');\nconst { results } = await res.json();\nconsole.log(results.map(i => `${i.icon_set}/${i.name}`));|} lang="javascript" />
+              <.code_block
+                code={
+                  ~s|const res = await fetch('https://icons.pureadmin.io/api/icons/search?q=calendar&format=compact');\nconst { results } = await res.json();\nconsole.log(results.map(i => `${i.icon_set}/${i.name}`));|
+                }
+                lang="javascript"
+              />
             </div>
 
             <div>
               <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/80 mb-2">
                 {t("apiDocs.examples.sync")}
               </h3>
-              <.code_block code={~s|curl -X POST -H "X-API-Key: your-key" 'https://icons.pureadmin.io/api/maintenance/sync/fontawesome'|} />
+              <.code_block code={
+                ~s|curl -X POST -H "X-API-Key: your-key" 'https://icons.pureadmin.io/api/maintenance/sync/fontawesome'|
+              } />
             </div>
           </div>
         </div>

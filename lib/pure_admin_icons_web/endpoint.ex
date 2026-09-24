@@ -53,5 +53,10 @@ defmodule PureAdminIconsWeb.Endpoint do
   plug Plug.MethodOverride
   plug Plug.Head
   plug Plug.Session, @session_options
+
+  # Stamp X-MCP-* version headers on responses. Unmatched /api/* paths route to
+  # a fallback 404 so they carry the headers too. See the plug's docs.
+  plug PureAdminIconsWeb.Plugs.McpVersionHeaders
+
   plug PureAdminIconsWeb.Router
 end

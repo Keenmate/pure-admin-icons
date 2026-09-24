@@ -16,7 +16,6 @@
   "common.time.minutesAgo": "vor %{count} Minuten",
   "common.time.hoursAgo": "vor %{count} Stunden",
   "common.time.daysAgo": "vor %{count} Tagen",
-
   "nav.buttons.docs": "Dokumentation",
   "nav.buttons.iconSets": "Symbolsets",
   "nav.buttons.api": "API",
@@ -24,7 +23,6 @@
   "nav.buttons.themes": "Designs",
   "nav.buttons.keenmate": "Keenmate",
   "nav.tooltips.language": "Sprache ändern",
-
   "docsIndex.headers.pageTitle": "Dokumentation",
   "docsIndex.messages.intro": "Anleitungen zum Suchen von Symbolen, Verwenden der API und Integration mit KI-Tools.",
   "docsIndex.cards.apiTitle": "API-Referenz",
@@ -35,7 +33,6 @@
   "docsIndex.cards.mcpDescription": "Verwenden Sie den MCP-Server zur Symbolsuche direkt aus Claude Desktop oder Claude Code. Installation, Konfiguration und Nutzung.",
   "docsIndex.cards.llmsTitle": "LLM-Integration",
   "docsIndex.cards.llmsDescription": "Token-effizientes Textformat, llms.txt, ai-plugin.json. Best Practices für KI-gestützte Symbolsuche.",
-
   "iconSets.headers.pageTitle": "Symbolsets",
   "iconSets.headers.styles": "Stile",
   "iconSets.headers.notes": "Hinweise",
@@ -54,7 +51,6 @@
   "iconSets.tooltips.nativeName": "Nativ: %{native}",
   "iconSets.tooltips.colorMethod": "Farbmethode: %{method}",
   "iconSets.tooltips.normalizedSvg": "Die ausgelieferten SVGs sind für die Einfärbung normalisiert — fest codierte Farben werden durch currentColor ersetzt, daher sind sie nicht bytegleich mit den Originaldateien. Originale gibt es im Quell-Repository.",
-
   "iconSearch.headers.heroTitlePrefix": "Durchsuche",
   "iconSearch.headers.heroTitleMiddle": "Symbole aus",
   "iconSearch.headers.heroTitleSuffix": "Symbolsets",
@@ -91,7 +87,6 @@
   "iconSearch.tooltips.downloadPngZip": "PNG-ZIP mit Designer-Einstellungen herunterladen",
   "iconSearch.tooltips.copyPlatformIdentifier": "Bezeichner für %{platform} kopieren",
   "iconSearch.tooltips.copyPlatformIdentifierSized": "Bezeichner für %{platform} in Größe %{size} kopieren",
-
   "iconDetail.headers.preview": "Vorschau",
   "iconDetail.headers.availableSizes": "Verfügbare Größen",
   "iconDetail.headers.downloadDesigner": "Download-Designer",
@@ -134,11 +129,9 @@
   "iconDetail.platforms.filename": "Dateiname",
   "iconDetail.platforms.cssClass": "CSS-Klasse",
   "iconDetail.platforms.htmlTag": "HTML-Tag",
-
   "apiDocs.headers.pageTitle": "API",
   "mcpDocs.headers.pageTitle": "MCP-Server",
   "llmsDocs.headers.pageTitle": "LLM-Integration",
-
   "stats.headers.pageTitle": "Statistik",
   "stats.headers.popularIcons": "Beliebte Symbole",
   "stats.tableHeaders.period": "Zeitraum",
@@ -158,7 +151,6 @@
   "stats.periods.allTime": "Gesamt",
   "stats.empty.noData": "Noch keine Daten für diesen Zeitraum.",
   "stats.messages.refreshNote": "Automatische Aktualisierung alle 30 s · Cube wird alle 3 min aktualisiert",
-
   "syncDiscrepancies.headers.pageTitle": "Bericht zu Sync-Abweichungen",
   "syncDiscrepancies.headers.summaryByStyle": "Zusammenfassung nach Stil",
   "syncDiscrepancies.tableHeaders.missingFiles": "Fehlende Dateien",
@@ -169,7 +161,6 @@
   "syncDiscrepancies.messages.explanation": "Fälle, in denen die Metadaten eines Symbolsets bestimmte Größen/Stile beanspruchen, die tatsächlichen SVG-Dateien aber im Repository fehlen. Dies ist ein Datenqualitätsproblem upstream.",
   "syncDiscrepancies.empty.noDiscrepancies": "Keine Abweichungen gefunden! Alle Metadaten entsprechen den tatsächlichen SVG-Dateien.",
   "syncDiscrepancies.empty.noSync": "Es wurde noch keine Synchronisation abgeschlossen.",
-
   "llmsDocs.tips.textFormat": "Verwenden Sie format=text, um den Token-Verbrauch zu minimieren",
   "apiDocs.examples.listSets": "Symbolsets auflisten",
   "apiDocs.params.limit": "Maximale Anzahl an Ergebnissen (Standard: 50, max: 100)",
@@ -241,5 +232,12 @@
   "apiDocs.headers.otherEndpoints": "Weitere Endpunkte",
   "apiDocs.formats.text": "Reiner Text, ein Symbol pro Zeile (am token-effizientesten für KI)",
   "apiDocs.formats.json": "Vollständige Antwort: id, icon_set, name, style, style_color_method, sizes, ios/android-Bezeichner, svg_url",
-  "llmsDocs.headers.machineDocs": "Maschinenlesbare Dokumentation"
+  "llmsDocs.headers.machineDocs": "Maschinenlesbare Dokumentation",
+  "mcpDocs.headers.updates": "Auf dem neuesten Stand bleiben",
+  "mcpDocs.messages.updatesCheck": "Der Server meldet seine Version und prüft beim Start /api/mcp/version auf die aktuell akzeptierten Versionen. Wenn Ihre installierte Kopie veraltet ist, protokolliert er einen Aktualisierungshinweis und stellt der get_usage_guide-Ausgabe ein kurzes Banner voran, damit der Assistent es weitergeben kann. Die Prüfung erfolgt nach bestem Bemühen — nichts bricht, wenn sie nicht erreichbar ist.",
+  "mcpDocs.messages.updatesRefresh": "Die obigen npx -y-Befehle verwenden immer die neueste veröffentlichte Version. So aktualisieren Sie eine global installierte Kopie:",
+  "apiDocs.descriptions.mcpVersion": "Versionsvertrag des MCP-Clients: die akzeptierten Versionen latest und min_supported des MCP-Servers, plus optionale Nachricht und Changelog-URL. Der MCP-Server prüft dies beim Start, um auf verfügbare Aktualisierungen hinzuweisen. Dieser Endpunkt bleibt abwärtskompatibel, damit das Signal Änderungen an anderer Stelle übersteht.",
+  "apiDocs.messages.mcpHeadersIntro": "Jede Antwort trägt außerdem den aktuellen MCP-Versionsvertrag als Header, sodass Clients auch aus einer Fehlerantwort von Aktualisierungen erfahren:",
+  "apiDocs.fields.xMcpLatest": "Neueste veröffentlichte MCP-Version.",
+  "apiDocs.fields.xMcpMinSupported": "Älteste noch akzeptierte MCP-Version; darunter sollte ein Client aktualisieren."
 }

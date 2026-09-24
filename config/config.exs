@@ -60,6 +60,18 @@ config :pure_admin_icons, PureAdminIcons.Scheduler,
     # Metrics are computed live from the audit event log (v1.21) — no cube to refresh.
   ]
 
+# MCP client version contract advertised to `@keenmate/pure-admin-icons-mcp`.
+# `latest` = newest published version; `min_supported` = hard floor below which
+# the API may reject/misbehave. Both are surfaced as `X-MCP-*` response headers
+# and via GET /api/mcp/version. Bump `min_supported` only when shipping a change
+# that genuinely breaks older clients. `message`/`sunset` are optional extras.
+config :pure_admin_icons, :mcp_version,
+  latest: "1.3.0",
+  min_supported: "1.0.0",
+  message: nil,
+  sunset: nil,
+  changelog_url: "https://icons.pureadmin.io/docs/mcp"
+
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 

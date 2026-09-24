@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-09-24 — v0.6.4 — MCP version contract + update mechanism
+
+**Backstory.** The v0.6.0 audit/session work and its MCP follow-up (`x-session-id`, MCP `1.2.0`) were purely additive, so older MCP clients kept working — but there was *no* mechanism to ever tell an outdated client to upgrade. If a future change were breaking, an old install would just fail with a bare error. This adds that missing channel before it's needed.
+
+**Two-threshold version contract.** The API now advertises the accepted `@keenmate/pure-admin-icons-mcp` versions from application config (`:pure_admin_icons, :mcp_version`, env-overridable): `latest` (newest published — drives a soft "upgrade available" nudge) and `min_supported` (hard floor — drives a "must upgrade" warning, and any future `426` enforcement). `min_supported` stays `1.0.0` for now, so nothing existing is cut off. Bump it only when shipping a genuinely breaking change; the gap between the two gives clients a deprecation window to upgrade *before* the break.
+
+**Advertised two ways, so an outdated client always gets the signal.**
+- `X-MCP-Latest` / `X-MCP-Min-Supported` headers on every response, via `Plugs.McpVersionHeaders` (`register_before_send` at the endpoint). Matched-route error responses (`put_status |> json`) carry them fine — but a raised `NoRouteError` is rendered by Phoenix on the *endpoint-entry* conn, before the `before_send` was registered, so an unmatched route (a renamed/removed endpoint — exactly the case that matters) would carry no headers. Fixed with an `/api` catch-all route → `API.FallbackController`, which returns a *normal* 404 (with a hint pointing at `/api/mcp/version`) so the headers ride there too.
+- `GET /api/mcp/version` (`API.McpController`) returns the richer JSON contract (`latest`, `min_supported`, optional `message`/`sunset`/`changelog_url`). This is the one endpoint we promise to keep backward-compatible forever, so the "you're outdated" signal never depends on which feature endpoints still exist.
+
+**MCP `1.3.0` (in `../pure-admin-icons-mcp`).** `apiFetch` now sends `x-mcp-version` and folds the `X-MCP-*` response headers into an update check; a one-shot startup call to `/api/mcp/version` supplies the richer message. A two-threshold decision yields a notice that's logged once to stderr and prepended as a banner to `get_usage_guide` output (so the assistant can relay it). Both paths are best-effort with a short timeout — a failed or unreachable check never blocks or fails a request.
+
+**Docs.** `/docs/api` documents the new endpoint and the `X-MCP-*` headers; `/docs/mcp` gains a "Keeping up to date" section explaining the check and the `npm i -g …@latest` refresh.
+
+---
+
 ## 2026-09-22 — v0.6.3 — Basket-clear event; button cursor fix
 
 **`basket_cleared` audit event.** The clear-all basket button recorded nothing (only per-icon add/remove did). It now emits a session-level `basket_cleared` event (via the generic `audit.create_event`, DB `v1.23`) carrying `{count: N}` — but only when the basket wasn't already empty. Not icon-scoped, so it doesn't snapshot an icon identity.

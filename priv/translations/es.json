@@ -16,7 +16,6 @@
   "common.time.minutesAgo": "hace %{count} minutos",
   "common.time.hoursAgo": "hace %{count} horas",
   "common.time.daysAgo": "hace %{count} días",
-
   "nav.buttons.docs": "Docs",
   "nav.buttons.iconSets": "Conjuntos",
   "nav.buttons.api": "API",
@@ -24,7 +23,6 @@
   "nav.buttons.themes": "Temas",
   "nav.buttons.keenmate": "Keenmate",
   "nav.tooltips.language": "Cambiar idioma",
-
   "docsIndex.headers.pageTitle": "Documentación",
   "docsIndex.messages.intro": "Guías para buscar iconos, usar la API e integrarse con herramientas de IA.",
   "docsIndex.cards.apiTitle": "Referencia de la API",
@@ -35,7 +33,6 @@
   "docsIndex.cards.mcpDescription": "Usa el servidor MCP para buscar iconos directamente desde Claude Desktop o Claude Code. Instalación, configuración y uso.",
   "docsIndex.cards.llmsTitle": "Integración con LLM",
   "docsIndex.cards.llmsDescription": "Formato de texto eficiente en tokens, llms.txt, ai-plugin.json. Buenas prácticas para búsquedas con IA.",
-
   "iconSets.headers.pageTitle": "Conjuntos de iconos",
   "iconSets.headers.styles": "Estilos",
   "iconSets.headers.notes": "Notas",
@@ -54,7 +51,6 @@
   "iconSets.tooltips.nativeName": "Nativo: %{native}",
   "iconSets.tooltips.colorMethod": "Método de color: %{method}",
   "iconSets.tooltips.normalizedSvg": "Los SVG servidos están normalizados para la tematización — los colores fijos se reescriben a currentColor, por lo que no son idénticos byte a byte a los archivos originales. Consigue los originales en el repositorio de origen.",
-
   "iconSearch.headers.heroTitlePrefix": "Busca",
   "iconSearch.headers.heroTitleMiddle": "iconos de",
   "iconSearch.headers.heroTitleSuffix": "conjuntos",
@@ -91,7 +87,6 @@
   "iconSearch.tooltips.downloadPngZip": "Descargar ZIP de PNG con los ajustes del diseñador",
   "iconSearch.tooltips.copyPlatformIdentifier": "Copiar identificador de %{platform}",
   "iconSearch.tooltips.copyPlatformIdentifierSized": "Copiar identificador de %{platform} para el tamaño %{size}",
-
   "iconDetail.headers.preview": "Vista previa",
   "iconDetail.headers.availableSizes": "Tamaños disponibles",
   "iconDetail.headers.downloadDesigner": "Diseñador de descarga",
@@ -134,11 +129,9 @@
   "iconDetail.platforms.filename": "Nombre de archivo",
   "iconDetail.platforms.cssClass": "Clase CSS",
   "iconDetail.platforms.htmlTag": "Etiqueta HTML",
-
   "apiDocs.headers.pageTitle": "API",
   "mcpDocs.headers.pageTitle": "Servidor MCP",
   "llmsDocs.headers.pageTitle": "Integración con LLM",
-
   "stats.headers.pageTitle": "Estadísticas",
   "stats.headers.popularIcons": "Iconos populares",
   "stats.tableHeaders.period": "Periodo",
@@ -158,7 +151,6 @@
   "stats.periods.allTime": "Siempre",
   "stats.empty.noData": "Aún no hay datos para este periodo.",
   "stats.messages.refreshNote": "Se actualiza automáticamente cada 30 s · El cubo se actualiza cada 3 min",
-
   "syncDiscrepancies.headers.pageTitle": "Informe de discrepancias de sincronización",
   "syncDiscrepancies.headers.summaryByStyle": "Resumen por estilo",
   "syncDiscrepancies.tableHeaders.missingFiles": "Archivos que faltan",
@@ -169,7 +161,6 @@
   "syncDiscrepancies.messages.explanation": "Son casos en los que los metadatos de un conjunto declaran ciertos tamaños/estilos, pero los archivos SVG correspondientes no están en el repositorio. Es un problema de calidad de datos de origen.",
   "syncDiscrepancies.empty.noDiscrepancies": "¡Sin discrepancias! Los metadatos coinciden con los archivos SVG.",
   "syncDiscrepancies.empty.noSync": "Aún no se ha completado ninguna sincronización.",
-
   "llmsDocs.tips.textFormat": "Usa format=text para minimizar el uso de tokens",
   "apiDocs.examples.listSets": "Listar conjuntos de iconos",
   "apiDocs.params.limit": "Máximo de resultados (por defecto: 50, máx.: 100)",
@@ -241,5 +232,12 @@
   "apiDocs.headers.otherEndpoints": "Otros endpoints",
   "apiDocs.formats.text": "Texto plano, un icono por línea (el más eficiente en tokens para IA)",
   "apiDocs.formats.json": "Respuesta completa: id, icon_set, name, style, style_color_method, sizes, identificadores ios/android, svg_url",
-  "llmsDocs.headers.machineDocs": "Documentación legible por máquina"
+  "llmsDocs.headers.machineDocs": "Documentación legible por máquina",
+  "mcpDocs.headers.updates": "Mantente actualizado",
+  "mcpDocs.messages.updatesCheck": "El servidor informa su versión y, al iniciarse, consulta /api/mcp/version para conocer las versiones aceptadas actualmente. Cuando tu copia instalada está desactualizada, registra un aviso de actualización y antepone un breve banner a la salida de get_usage_guide para que el asistente pueda transmitirlo. La comprobación es de mejor esfuerzo: nada se rompe si no se puede alcanzar.",
+  "mcpDocs.messages.updatesRefresh": "Los comandos npx -y anteriores siempre usan la última versión publicada. Para actualizar una copia instalada globalmente:",
+  "apiDocs.descriptions.mcpVersion": "Contrato de versión del cliente MCP: las versiones aceptadas latest y min_supported del servidor MCP, más un mensaje opcional y la URL del changelog. El servidor MCP lo consulta al iniciarse para avisar cuando hay una actualización disponible. Este endpoint se mantiene retrocompatible para que la señal sobreviva a cambios en otros lugares.",
+  "apiDocs.messages.mcpHeadersIntro": "Cada respuesta también incluye el contrato de versión MCP actual en las cabeceras, de modo que los clientes se enteran de las actualizaciones incluso desde una respuesta de error:",
+  "apiDocs.fields.xMcpLatest": "Versión más reciente publicada del MCP.",
+  "apiDocs.fields.xMcpMinSupported": "Versión más antigua del MCP aún aceptada; por debajo de ella el cliente debería actualizarse."
 }

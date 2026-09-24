@@ -252,7 +252,8 @@ defmodule PureAdminIcons.Translations do
     "apiDocs.descriptions.iconSets" =>
       "List all available icon sets with metadata: styles, sizes, license, color methods, icon count, plus each set's description and notes (e.g. whether its served SVGs are normalized from upstream).",
     "apiDocs.descriptions.health" => "Health check. Returns icon count and status.",
-    "apiDocs.descriptions.serve" => "Serve an icon SVG file. Cached for 1 year with immutable header.",
+    "apiDocs.descriptions.serve" =>
+      "Serve an icon SVG file. Cached for 1 year with immutable header.",
     "apiDocs.descriptions.maintenance" =>
       "Trigger a maintenance task. Requires X-API-Key header. Rate limited to 5 requests per 5 minutes.",
     "apiDocs.notes.maintenance" =>
@@ -260,7 +261,8 @@ defmodule PureAdminIcons.Translations do
     "apiDocs.params.q" => "Search query (required)",
     "apiDocs.params.set" =>
       "Filter by icon set code, e.g. fluentui, material, phosphor, tabler, lucide, solar (repeatable) — see /api/icon-sets for all codes",
-    "apiDocs.params.size" => "Filter by size, e.g. 16, 20, 24, 28, 32, 48 (most sets are scalable)",
+    "apiDocs.params.size" =>
+      "Filter by size, e.g. 16, 20, 24, 28, 32, 48 (most sets are scalable)",
     "apiDocs.params.style" =>
       "Filter by style: outline, filled, thin, light, regular, bold, rounded, sharp, duotone, line-duotone, broken, color, brands (varies by set)",
     "apiDocs.params.limit" => "Max results (default: 50, max: 100)",
@@ -279,6 +281,13 @@ defmodule PureAdminIcons.Translations do
     "apiDocs.fields.ios" => "iOS/Swift identifier per size (e.g., {\"24\": \"calendar24Solid\"})",
     "apiDocs.fields.android" =>
       "Android/Kotlin identifier per size (e.g., {\"24\": \"ic_heroicons_calendar_24_solid\"})",
+    "apiDocs.descriptions.mcpVersion" =>
+      "MCP client version contract: the accepted latest and min_supported versions of the MCP server, plus an optional message and changelog URL. The MCP server checks this at startup to warn when an update is available. This endpoint stays backward-compatible so the signal survives changes elsewhere.",
+    "apiDocs.messages.mcpHeadersIntro" =>
+      "Every response also carries the current MCP version contract as headers, so clients learn about updates even from an error response:",
+    "apiDocs.fields.xMcpLatest" => "Newest published MCP version.",
+    "apiDocs.fields.xMcpMinSupported" =>
+      "Oldest MCP version still accepted; below this a client should upgrade.",
     "apiDocs.examples.search" => "Search icons",
     "apiDocs.examples.multiSet" => "Filter by multiple icon sets",
     "apiDocs.examples.iconDetail" => "Get icon detail",
@@ -294,6 +303,11 @@ defmodule PureAdminIcons.Translations do
     "mcpDocs.headers.installation" => "Installation",
     "mcpDocs.headers.availableTools" => "Available Tools",
     "mcpDocs.headers.usageExample" => "Usage Example",
+    "mcpDocs.headers.updates" => "Keeping up to date",
+    "mcpDocs.messages.updatesCheck" =>
+      "The server reports its version and, on startup, checks /api/mcp/version for the currently accepted versions. When your installed copy is behind, it logs an upgrade notice and prepends a short banner to the get_usage_guide output so the assistant can relay it. The check is best-effort — nothing breaks when it can't be reached.",
+    "mcpDocs.messages.updatesRefresh" =>
+      "The npx -y commands above always resolve the latest published version. To refresh a globally installed copy:",
     "mcpDocs.messages.intro" =>
       "Search icons directly from Claude Desktop or Claude Code using the MCP (Model Context Protocol) server.",
     "mcpDocs.messages.installation" =>

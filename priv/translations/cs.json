@@ -17,7 +17,6 @@
   "common.time.minutesAgo": "před %{count} minutami",
   "common.time.hoursAgo": "před %{count} hodinami",
   "common.time.daysAgo": "před %{count} dny",
-
   "nav.buttons.docs": "Dokumentace",
   "nav.buttons.iconSets": "Sady ikon",
   "nav.buttons.api": "API",
@@ -25,7 +24,6 @@
   "nav.buttons.themes": "Motivy",
   "nav.buttons.keenmate": "Keenmate",
   "nav.tooltips.language": "Změnit jazyk",
-
   "docsIndex.headers.pageTitle": "Dokumentace",
   "docsIndex.messages.intro": "Průvodce hledáním ikon, použitím API a integrací s AI nástroji.",
   "docsIndex.cards.apiTitle": "Referenční dokumentace API",
@@ -36,7 +34,6 @@
   "docsIndex.cards.mcpDescription": "Použijte MCP server pro hledání ikon přímo z Claude Desktop nebo Claude Code. Instalace, konfigurace a použití.",
   "docsIndex.cards.llmsTitle": "Integrace s LLM",
   "docsIndex.cards.llmsDescription": "Token-efektivní textový formát, llms.txt, ai-plugin.json. Nejlepší postupy pro AI vyhledávání ikon.",
-
   "iconSets.headers.pageTitle": "Sady ikon",
   "iconSets.headers.styles": "Styly",
   "iconSets.headers.notes": "Poznámky",
@@ -55,7 +52,6 @@
   "iconSets.tooltips.nativeName": "Nativní: %{native}",
   "iconSets.tooltips.colorMethod": "Metoda obarvení: %{method}",
   "iconSets.tooltips.normalizedSvg": "Poskytovaná SVG jsou upravena kvůli obarvování — pevně dané barvy jsou přepsány na currentColor, takže nejsou bajtově shodná s původními soubory. Originály najdete ve zdrojovém repozitáři.",
-
   "iconSearch.headers.heroTitlePrefix": "Hledat",
   "iconSearch.headers.heroTitleMiddle": "ikon z",
   "iconSearch.headers.heroTitleSuffix": "sad ikon",
@@ -105,7 +101,6 @@
   "iconSearch.tooltips.downloadPngZip": "Stáhnout ZIP s PNG podle nastavení designeru",
   "iconSearch.tooltips.copyPlatformIdentifier": "Kopírovat identifikátor pro %{platform}",
   "iconSearch.tooltips.copyPlatformIdentifierSized": "Kopírovat identifikátor pro %{platform} ve velikosti %{size}",
-
   "iconDetail.headers.preview": "Náhled",
   "iconDetail.headers.availableSizes": "Dostupné velikosti",
   "iconDetail.headers.downloadDesigner": "Designer stahování",
@@ -148,11 +143,9 @@
   "iconDetail.platforms.filename": "Název souboru",
   "iconDetail.platforms.cssClass": "CSS třída",
   "iconDetail.platforms.htmlTag": "HTML tag",
-
   "apiDocs.headers.pageTitle": "API",
   "mcpDocs.headers.pageTitle": "MCP server",
   "llmsDocs.headers.pageTitle": "Integrace s LLM",
-
   "stats.headers.pageTitle": "Statistiky",
   "stats.headers.popularIcons": "Oblíbené ikony",
   "stats.tableHeaders.period": "Období",
@@ -172,7 +165,6 @@
   "stats.periods.allTime": "Celkem",
   "stats.empty.noData": "Za toto období zatím nejsou žádná data.",
   "stats.messages.refreshNote": "Automatická aktualizace každých 30 s · Cube se obnovuje každé 3 min",
-
   "syncDiscrepancies.headers.pageTitle": "Report nesrovnalostí synchronizace",
   "syncDiscrepancies.headers.summaryByStyle": "Souhrn podle stylu",
   "syncDiscrepancies.tableHeaders.missingFiles": "Chybějící soubory",
@@ -183,7 +175,6 @@
   "syncDiscrepancies.messages.explanation": "Jedná se o případy, kdy metadata sady ikon deklarují určité velikosti/styly, ale skutečné SVG soubory v repozitáři chybí. Jde o problém kvality dat na upstream straně.",
   "syncDiscrepancies.empty.noDiscrepancies": "Žádné nesrovnalosti nenalezeny! Všechna metadata odpovídají skutečným SVG souborům.",
   "syncDiscrepancies.empty.noSync": "Zatím nebyla dokončena žádná synchronizace.",
-
   "llmsDocs.tips.textFormat": "Použijte format=text pro minimalizaci spotřeby tokenů",
   "apiDocs.examples.listSets": "Výpis sad ikon",
   "apiDocs.params.limit": "Maximální počet výsledků (výchozí: 50, max: 100)",
@@ -255,5 +246,12 @@
   "apiDocs.headers.otherEndpoints": "Další endpointy",
   "apiDocs.formats.text": "Prostý text, jedna ikona na řádek (nejúspornější na tokeny pro AI)",
   "apiDocs.formats.json": "Kompletní odpověď: id, icon_set, name, style, style_color_method, sizes, identifikátory ios/android, svg_url",
-  "llmsDocs.headers.machineDocs": "Strojově čitelná dokumentace"
+  "llmsDocs.headers.machineDocs": "Strojově čitelná dokumentace",
+  "mcpDocs.headers.updates": "Zůstaňte aktuální",
+  "mcpDocs.messages.updatesCheck": "Server hlásí svou verzi a při spuštění zkontroluje /api/mcp/version pro aktuálně podporované verze. Pokud je vaše nainstalovaná kopie zastaralá, zaznamená upozornění na aktualizaci a přidá krátký banner na výstup get_usage_guide, aby jej asistent mohl předat. Kontrola je best-effort — nic se nerozbije, když ji nelze provést.",
+  "mcpDocs.messages.updatesRefresh": "Příkazy npx -y výše vždy použijí nejnovější publikovanou verzi. Pro obnovení globálně nainstalované kopie:",
+  "apiDocs.descriptions.mcpVersion": "Kontrakt verze MCP klienta: podporované verze latest a min_supported MCP serveru, plus volitelná zpráva a URL changelogu. MCP server toto zkontroluje při spuštění, aby upozornil na dostupnou aktualizaci. Tento endpoint zůstává zpětně kompatibilní, aby signál přežil změny jinde.",
+  "apiDocs.messages.mcpHeadersIntro": "Každá odpověď také nese aktuální kontrakt verze MCP v hlavičkách, takže se klienti dozvědí o aktualizacích i z chybové odpovědi:",
+  "apiDocs.fields.xMcpLatest": "Nejnovější publikovaná verze MCP.",
+  "apiDocs.fields.xMcpMinSupported": "Nejstarší stále přijímaná verze MCP; pod touto hranicí by měl klient aktualizovat."
 }
