@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-28 — v0.6.7 — Fix: random landing was per-reload, not per-session
+
+**The v0.6.6 "once per session" random landing actually re-randomized on every reload.** The one-shot flag lived only in the server-side LiveView socket assign (`random_shown`), which resets on every fresh mount — so each page reload started at `false` and randomized again. Moved the per-session memory to the client: `app.js` now persists an `icon_random_shown` flag in `sessionStorage` (same lifecycle as `session_uid`) and passes it as a `random_shown` connect param. `mount` seeds the assign from it (`not connected or connect_params["random_shown"] == true`), so the static/disconnected render and every reload within the session render standard a–z, and only the first empty-query render of a new browsing session randomizes. The within-mount "consume after first render" logic (type a query then clear it → a–z) is unchanged.
+
+---
+
 ## 2026-09-28 — v0.6.6 — Random icons on the landing page (once per session)
 
 **A fresh set of icons greets each new session.** The empty-query landing page used to always render the same deterministic a–z slice. It now shows a *random* set on the first empty-query render of a session, to make the page more interesting. This is a one-shot: the moment the visitor interacts — e.g. types `hroch` then clears it back to empty — the empty query falls back to the standard a–z ordering, and pagination/filtering stays stable after the first page.

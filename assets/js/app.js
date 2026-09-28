@@ -2208,6 +2208,17 @@ function getSessionUid() {
   return uid
 }
 
+// Once-per-session flag for the random landing page. Returns whether the random
+// landing has already been shown this browsing session, then marks it shown — so the
+// very first page load of a session returns false (server randomizes) and every
+// reload thereafter returns true (server keeps the standard a–z order). Kept in
+// sessionStorage so it resets when the tab/window closes, like session_uid.
+function getRandomShown() {
+  const shown = sessionStorage.getItem("icon_random_shown") === "1"
+  sessionStorage.setItem("icon_random_shown", "1")
+  return shown
+}
+
 // utm_* query params → a compact object (keys without the utm_ prefix), or {} if none.
 function getUtm() {
   const p = new URLSearchParams(window.location.search)
@@ -2231,6 +2242,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
     filter_icon_sets: JSON.parse(localStorage.getItem("icon_filter_icon_sets") || "[]"),
     basket: JSON.parse(localStorage.getItem("icon_basket") || "[]"),
     session_uid: getSessionUid(),
+    random_shown: getRandomShown(),
     referrer: document.referrer || null,
     utm: getUtm()
   },

@@ -103,7 +103,13 @@ defmodule PureAdminIconsWeb.IconSearchLive do
       |> assign(session_uid: session_uid)
       |> assign(utm_data: utm_data)
       |> assign(last_tracked_query: nil)
-      |> assign(random_shown: false)
+      # One-shot random landing: only the first empty-query render of a *browsing
+      # session* randomizes. The client persists a per-session flag in sessionStorage
+      # and passes it via connect params; here we seed `random_shown` from it. On the
+      # static (disconnected) render connect_params is empty, so we treat random as
+      # already-shown to avoid a flash of random HTML before the socket connects — and
+      # on every reload within the session the client flag keeps it a–z.
+      |> assign(random_shown: not connected or connect_params["random_shown"] == true)
 
     duration_ms =
       System.convert_time_unit(System.monotonic_time() - mount_start, :native, :millisecond)
