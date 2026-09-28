@@ -103,13 +103,13 @@ defmodule PureAdminIconsWeb.IconSearchLive do
       |> assign(session_uid: session_uid)
       |> assign(utm_data: utm_data)
       |> assign(last_tracked_query: nil)
-      # One-shot random landing: only the first empty-query render of a *browsing
-      # session* randomizes. The client persists a per-session flag in sessionStorage
-      # and passes it via connect params; here we seed `random_shown` from it. On the
-      # static (disconnected) render connect_params is empty, so we treat random as
-      # already-shown to avoid a flash of random HTML before the socket connects — and
-      # on every reload within the session the client flag keeps it a–z.
-      |> assign(random_shown: not connected or connect_params["random_shown"] == true)
+      # Random landing page: empty-query browsing shows a random set of icons until
+      # the visitor runs a real (non-empty) search this browsing session, after which
+      # empty queries fall back to the standard a–z order. `searched` tracks that; the
+      # client persists it in sessionStorage and passes it via connect params so it
+      # survives reloads. On the static (disconnected) render connect_params is empty,
+      # so we treat it as searched to avoid a flash of random HTML before connect.
+      |> assign(searched: not connected or connect_params["searched"] == true)
 
     duration_ms =
       System.convert_time_unit(System.monotonic_time() - mount_start, :native, :millisecond)
@@ -166,11 +166,11 @@ defmodule PureAdminIconsWeb.IconSearchLive do
         {styles, sizes, icon_sets}
       end
 
-    # One-shot random landing: the very first empty-query render of a session shows
-    # a random set of icons to make the page more interesting. Consumed after that
-    # render, so once the visitor has interacted (e.g. types "hroch" then clears it),
-    # an empty query falls back to the standard deterministic (a–z) ordering.
-    random? = query == "" and not Map.get(socket.assigns, :random_shown, false)
+    # Random landing: empty-query browsing renders a random set of icons until the
+    # visitor runs a real (non-empty) search this session. So typing "hroch" (or any
+    # query) flips it off, and a subsequent empty query falls back to standard a–z.
+    already_searched = Map.get(socket.assigns, :searched, false)
+    random? = query == "" and not already_searched
 
     assigns = %{
       selected_styles: styles,
@@ -241,9 +241,20 @@ defmodule PureAdminIconsWeb.IconSearchLive do
         selected_icon: nil,
         filters_initialized: true,
         last_tracked_query: if(track_query?, do: query, else: socket.assigns[:last_tracked_query]),
-        random_shown: socket.assigns[:random_shown] || random?
+        # A real (non-empty) query marks the session as "searched", ending the random
+        # landing for the rest of the session (including reloads, once persisted below).
+        searched: already_searched or (connected and query != "")
       )
       |> maybe_save_filters(styles, sizes, icon_sets)
+
+    # Persist the "searched" flag to the client (sessionStorage) on the first real
+    # search, so empty-query browsing after a reload no longer shows the random page.
+    socket =
+      if connected and query != "" and not already_searched do
+        push_event(socket, "save_searched", %{})
+      else
+        socket
+      end
 
     duration_ms =
       System.convert_time_unit(

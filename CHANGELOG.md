@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-28 — v0.6.8 — Random landing persists until the first real search
+
+**The random landing now lasts the whole browsing session until the visitor actually searches**, rather than being consumed after the first render. Empty-query browsing (initial load, reloads, filter toggles, pagination) keeps showing a random set of icons until the first real (non-empty) search; after that, empty queries fall back to the standard a–z order for the rest of the session (reloads included). Replaced the per-load `icon_random_shown` flag with a `searched` flag: `app.js` reads `sessionStorage["icon_searched"]` into the `searched` connect param, and the LiveView pushes a `save_searched` event on the first non-empty query to persist it. `mount` seeds the `searched` assign from the connect param (still treating the disconnected render as searched to avoid a random flash before connect); `handle_params` randomizes whenever the query is empty and the session hasn't searched yet.
+
+---
+
 ## 2026-09-28 — v0.6.7 — Fix: random landing was per-reload, not per-session
 
 **The v0.6.6 "once per session" random landing actually re-randomized on every reload.** The one-shot flag lived only in the server-side LiveView socket assign (`random_shown`), which resets on every fresh mount — so each page reload started at `false` and randomized again. Moved the per-session memory to the client: `app.js` now persists an `icon_random_shown` flag in `sessionStorage` (same lifecycle as `session_uid`) and passes it as a `random_shown` connect param. `mount` seeds the assign from it (`not connected or connect_params["random_shown"] == true`), so the static/disconnected render and every reload within the session render standard a–z, and only the first empty-query render of a new browsing session randomizes. The within-mount "consume after first render" logic (type a query then clear it → a–z) is unchanged.

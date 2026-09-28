@@ -669,6 +669,11 @@ Hooks.MetricsTracker = {
     this.handleEvent("save_basket", ({basket}) => {
       localStorage.setItem("icon_basket", JSON.stringify(basket || []))
     })
+    // Marks that a real search happened this session, so the random landing page
+    // isn't shown again for empty-query browsing after a reload.
+    this.handleEvent("save_searched", () => {
+      sessionStorage.setItem("icon_searched", "1")
+    })
   }
 }
 
@@ -2208,15 +2213,12 @@ function getSessionUid() {
   return uid
 }
 
-// Once-per-session flag for the random landing page. Returns whether the random
-// landing has already been shown this browsing session, then marks it shown — so the
-// very first page load of a session returns false (server randomizes) and every
-// reload thereafter returns true (server keeps the standard a–z order). Kept in
-// sessionStorage so it resets when the tab/window closes, like session_uid.
-function getRandomShown() {
-  const shown = sessionStorage.getItem("icon_random_shown") === "1"
-  sessionStorage.setItem("icon_random_shown", "1")
-  return shown
+// Whether the visitor has run a real (non-empty) search yet this browsing session.
+// The random landing page is shown for empty-query browsing until this flips true;
+// the server sets it (via the save_searched event below) on the first real search.
+// Kept in sessionStorage so it resets when the tab/window closes, like session_uid.
+function hasSearched() {
+  return sessionStorage.getItem("icon_searched") === "1"
 }
 
 // utm_* query params → a compact object (keys without the utm_ prefix), or {} if none.
@@ -2242,7 +2244,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
     filter_icon_sets: JSON.parse(localStorage.getItem("icon_filter_icon_sets") || "[]"),
     basket: JSON.parse(localStorage.getItem("icon_basket") || "[]"),
     session_uid: getSessionUid(),
-    random_shown: getRandomShown(),
+    searched: hasSearched(),
     referrer: document.referrer || null,
     utm: getUtm()
   },

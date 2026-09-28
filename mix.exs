@@ -4,7 +4,7 @@ defmodule PureAdminIcons.MixProject do
   def project do
     [
       app: :pure_admin_icons,
-      version: "0.6.7",
+      version: "0.6.8",
       elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
