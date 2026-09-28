@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-28 — v0.6.5 — Live catalog counts in title/meta; license in detail; wider dialog
+
+**Catalog totals cached and wired into the page head.** The hardcoded `<title>` / OpenGraph / meta description advertised "39,000+ Icons from 8 Icon Sets" — long stale (it's now ~58,700 icons across 13 sets), and never updated because those strings were baked into `root.html.heex`. Added `PureAdminIcons.Catalog`, a `:persistent_term` cache (mirroring `IconSets.Color`) of total icon count, set count, and set titles, derived from a single `Icons.list_icon_sets/0` call. It's refreshed after every sync in `Sync.Worker.sync_all/1` (next to the brand-color refresh), so the import job keeps it current; reads never hit the DB, with a lazy fetch on cold start. `root.html.heex` now builds the title / OG / meta description from the cache, so they always reflect what's actually imported. The search LiveView drops its separate `Icons.count/0` round-trip too — the total is just the sum of the per-set counts it already loads on mount. The meta description was also trimmed to the set list (dropping the "Filter by style… Free JSON API." tail) so it isn't badly over-length.
+
+**Icon-set license shown in the detail header.** The icon detail panel now displays the source license (e.g. "License: MIT") as a small note under the set/style badges. `public.get_icon_detail` doesn't return it, so it's looked up from the already-loaded `icon_sets` list (which carries `code` + `license`) — no DB/function change. Values are the raw upstream strings (`MIT`, `CC BY 4.0 / MIT`, `Apache 2.0`, …), not normalized.
+
+**Wider detail dialog on smaller screens.** Below the `xl` breakpoint the detail renders as a centered overlay modal; its width cap went from `max-w-2xl` (672px) to `80vw` so it uses more of the visible screen. The `xl`+ inline master/detail column layout (`xl:max-w-none` + 3/5–2/5 split) is unchanged.
+
+---
+
 ## 2026-09-24 — v0.6.4 — MCP version contract + update mechanism
 
 **Backstory.** The v0.6.0 audit/session work and its MCP follow-up (`x-session-id`, MCP `1.2.0`) were purely additive, so older MCP clients kept working — but there was *no* mechanism to ever tell an outdated client to upgrade. If a future change were breaking, an old install would just fail with a bare error. This adds that missing channel before it's needed.

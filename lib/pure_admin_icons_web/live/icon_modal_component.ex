@@ -20,7 +20,7 @@ defmodule PureAdminIconsWeb.IconModalComponent do
 
   @impl true
   def update(assigns, socket) do
-    {:ok, assign(socket, assigns)}
+    {:ok, socket |> assign(assigns) |> assign_new(:license, fn -> nil end)}
   end
 
   @impl true
@@ -40,7 +40,7 @@ defmodule PureAdminIconsWeb.IconModalComponent do
 
       <!-- Modal / inline panel -->
       <div class="flex min-h-full items-center justify-center p-4 xl:block xl:p-0">
-        <div class="relative bg-base-200 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto xl:max-w-none xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:shadow-lg">
+        <div class="relative bg-base-200 rounded-xl shadow-2xl max-w-[80vw] w-full max-h-[90vh] overflow-y-auto xl:max-w-none xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:shadow-lg">
           <!-- Close button -->
           <button
             phx-click="close_modal"
@@ -67,6 +67,11 @@ defmodule PureAdminIconsWeb.IconModalComponent do
                 >{@icon.icon_set_code}</span>
                 <span class="inline-block px-2.5 py-1 rounded text-sm font-medium badge-style capitalize">{@icon.style_code}</span>
               </div>
+              <%= if @license && @license != "" do %>
+                <p class="text-xs text-base-content/50 mt-1.5">
+                  {t("iconDetail.labels.license")}: {@license}
+                </p>
+              <% end %>
 
               <!-- Stats -->
               <% copies = Map.get(@metrics, "copy", 0) %>

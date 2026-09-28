@@ -8,16 +8,25 @@
     <link rel="icon" type="image/x-icon" href={~p"/favicon.ico"} />
     <.live_title
       suffix=" — icons.pureadmin.io"
-      default="icons.pureadmin.io — Search 39,000+ Icons from 8 Icon Sets"
+      default={"icons.pureadmin.io — Search #{catalog_icon_count_display()} Icons from #{catalog_set_count()} Icon Sets"}
     >
       {assigns[:page_title]}
     </.live_title>
-    <meta property="og:title" content="icons.pureadmin.io — Search 39,000+ Icons from 8 Icon Sets" />
-    <meta property="og:description" content="Search icons from FluentUI, Font Awesome, Heroicons, Lucide, Material, Phosphor, Remix & Tabler. Platform identifiers for iOS, Android, React, Vue & Svelte. Free API." />
+    <meta
+      property="og:title"
+      content={"icons.pureadmin.io — Search #{catalog_icon_count_display()} Icons from #{catalog_set_count()} Icon Sets"}
+    />
+    <meta
+      property="og:description"
+      content={"Search icons from #{catalog_set_titles_sentence()}. Platform identifiers for iOS, Android, React, Vue & Svelte. Free API."}
+    />
     <meta property="og:url" content="https://icons.pureadmin.io" />
     <meta property="og:site_name" content="icons.pureadmin.io" />
     <meta property="og:type" content="website" />
-    <meta name="description" content="Search 39,000+ open-source SVG icons from FluentUI, Font Awesome, Heroicons, Lucide, Material, Phosphor, Remix & Tabler. Platform identifiers for iOS, Android, React, Vue & Svelte. Filter by style and size, copy code snippets instantly. Free JSON API." />
+    <meta
+      name="description"
+      content={"Search #{catalog_icon_count_display()} open-source SVG icons from #{catalog_set_titles_sentence()}. Platform identifiers for iOS, Android, React, Vue & Svelte."}
+    />
     <meta name="keywords" content="icons, SVG, FluentUI, Font Awesome, Heroicons, Lucide, Material, Phosphor, Remix, Tabler, React, Vue, Svelte, iOS, Android, icon search, free icons, open source" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

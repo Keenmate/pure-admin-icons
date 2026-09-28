@@ -53,6 +53,10 @@ defmodule PureAdminIcons.Sync.Worker do
     # Brand colors / icon-set metadata may have changed; refresh the cache.
     PureAdminIcons.IconSets.Color.refresh()
 
+    # Catalog totals (icon/set counts, set titles) drive the header + SEO meta;
+    # refresh so they reflect what this sync just imported.
+    PureAdminIcons.Catalog.refresh()
+
     if failures == [] do
       {:ok, results}
     else

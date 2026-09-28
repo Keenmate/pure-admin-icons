@@ -190,6 +190,7 @@ defmodule PureAdminIcons.Translations do
     "iconDetail.labels.copies" => "copies",
     "iconDetail.labels.downloads" => "downloads",
     "iconDetail.labels.total" => "total",
+    "iconDetail.labels.license" => "License",
     "iconDetail.labels.preview" => "Preview:",
     "iconDetail.labels.colors" => "Colors:",
     "iconDetail.labels.pasteCss" => "Paste CSS from another project:",

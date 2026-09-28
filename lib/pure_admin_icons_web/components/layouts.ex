@@ -9,6 +9,13 @@ defmodule PureAdminIconsWeb.Layouts do
 
   embed_templates "layouts/*"
 
+  # Catalog totals for the root layout's <title> / OpenGraph / meta tags.
+  # Read from PureAdminIcons.Catalog (:persistent_term, no DB hit) so they stay
+  # current after each sync without a per-request query.
+  defp catalog_icon_count_display, do: PureAdminIcons.Catalog.icon_count_display()
+  defp catalog_set_count, do: PureAdminIcons.Catalog.set_count()
+  defp catalog_set_titles_sentence, do: PureAdminIcons.Catalog.set_titles_sentence()
+
   attr :class, :string, default: "text-lg"
 
   def logo(assigns) do

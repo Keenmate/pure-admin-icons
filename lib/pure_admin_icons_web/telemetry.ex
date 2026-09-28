@@ -59,7 +59,6 @@ defmodule PureAdminIconsWeb.Telemetry do
       ),
       summary("pure_admin_icons.icon_search.mount.get_last_sync_ms", unit: :millisecond),
       summary("pure_admin_icons.icon_search.mount.list_icon_sets_ms", unit: :millisecond),
-      summary("pure_admin_icons.icon_search.mount.icon_count_ms", unit: :millisecond),
       summary("pure_admin_icons.icon_search.handle_params.duration_ms",
         tags: [:connected, :filtered],
         unit: :millisecond

@@ -82,7 +82,9 @@ defmodule PureAdminIconsWeb.IconSearchLive do
     all_styles = icon_sets |> Enum.flat_map(& &1.styles) |> Enum.uniq() |> Enum.sort()
     all_sizes = icon_sets |> Enum.flat_map(& &1.sizes) |> Enum.uniq() |> Enum.sort()
 
-    {count_us, icon_count} = :timer.tc(fn -> Icons.count() end)
+    # Total icons is just the sum of the per-set counts we already fetched above —
+    # no need for a separate Icons.count() DB round-trip.
+    icon_count = Enum.sum(Enum.map(icon_sets, &(&1.icon_count || 0)))
 
     socket =
       socket
@@ -108,8 +110,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
     measurements = %{
       duration_ms: duration_ms,
       get_last_sync_ms: div(last_sync_us, 1000),
-      list_icon_sets_ms: div(list_sets_us, 1000),
-      icon_count_ms: div(count_us, 1000)
+      list_icon_sets_ms: div(list_sets_us, 1000)
     }
 
     metadata = %{connected: connected}
@@ -119,8 +120,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
     Logger.info(
       "[icon_search.mount] connected=#{connected} total=#{duration_ms}ms " <>
         "(get_last_sync=#{measurements.get_last_sync_ms}ms " <>
-        "list_icon_sets=#{measurements.list_icon_sets_ms}ms " <>
-        "count=#{measurements.icon_count_ms}ms)"
+        "list_icon_sets=#{measurements.list_icon_sets_ms}ms)"
     )
 
     {:ok, socket}
@@ -299,6 +299,15 @@ defmodule PureAdminIconsWeb.IconSearchLive do
   end
 
   defp to_int(_), do: nil
+
+  # License string for an icon-set code, looked up from the already-loaded
+  # icon_sets list (no extra DB call). nil when unknown.
+  defp license_for(icon_sets, code) do
+    case Enum.find(icon_sets, &(&1.code == code)) do
+      %{license: license} -> license
+      _ -> nil
+    end
+  end
 
   defp maybe_save_filters(socket, styles, sizes, icon_sets) do
     if connected?(socket) do
@@ -1258,6 +1267,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                   module={PureAdminIconsWeb.IconModalComponent}
                   id="icon-modal"
                   icon={@selected_icon}
+                  license={license_for(@icon_sets, @selected_icon.icon_set_code)}
                   platform_prefs={@platform_prefs}
                   metrics={@icon_metrics}
                 />
