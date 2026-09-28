@@ -8,6 +8,8 @@
 
 **Wider detail dialog on smaller screens.** Below the `xl` breakpoint the detail renders as a centered overlay modal; its width cap went from `max-w-2xl` (672px) to `80vw` so it uses more of the visible screen. The `xl`+ inline master/detail column layout (`xl:max-w-none` + 3/5–2/5 split) is unchanged.
 
+**Compact detail header.** With the dialog now wide, the centered stack (name / badges / license, plus three stat boxes) wasted vertical space. Collapsed into a single left-aligned row: name + set/style badges + license inline, with usage stats (copies/downloads/total) pushed right as compact text. Wraps on narrow widths.
+
 ---
 
 ## 2026-09-24 — v0.6.4 — MCP version contract + update mechanism

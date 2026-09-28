@@ -57,40 +57,33 @@ defmodule PureAdminIconsWeb.IconModalComponent do
           </button>
 
           <div class="p-6">
-            <!-- Header -->
-            <div class="text-center mb-6">
-              <h2 class="text-2xl font-bold text-base-content" id="modal-title">{@icon.name}</h2>
-              <div class="flex justify-center gap-2 mt-2">
-                <span
-                  class="inline-block px-2.5 py-1 rounded text-sm font-medium"
-                  style={PureAdminIcons.IconSets.Color.badge_style(@icon.icon_set_code)}
-                >{@icon.icon_set_code}</span>
-                <span class="inline-block px-2.5 py-1 rounded text-sm font-medium badge-style capitalize">{@icon.style_code}</span>
-              </div>
+            <!-- Header — single compact row: name · badges · license · stats -->
+            <% copies = Map.get(@metrics, "copy", 0) %>
+            <% downloads = Map.get(@metrics, "download", 0) %>
+            <% total = copies + downloads %>
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5 mb-6 pr-8">
+              <h2 class="text-2xl font-bold text-base-content leading-none" id="modal-title">{@icon.name}</h2>
+              <span
+                class="inline-block px-2.5 py-1 rounded text-sm font-medium"
+                style={PureAdminIcons.IconSets.Color.badge_style(@icon.icon_set_code)}
+              >{@icon.icon_set_code}</span>
+              <span class="inline-block px-2.5 py-1 rounded text-sm font-medium badge-style capitalize">{@icon.style_code}</span>
               <%= if @license && @license != "" do %>
-                <p class="text-xs text-base-content/50 mt-1.5">
+                <span class="text-xs text-base-content/50">
                   {t("iconDetail.labels.license")}: {@license}
-                </p>
+                </span>
               <% end %>
-
-              <!-- Stats -->
-              <% copies = Map.get(@metrics, "copy", 0) %>
-              <% downloads = Map.get(@metrics, "download", 0) %>
-              <% total = copies + downloads %>
               <%= if total > 0 do %>
-                <div class="flex justify-center gap-3 mt-3">
-                  <div class="px-3 py-1.5 bg-base-200 rounded-lg text-center">
-                    <div class="text-lg font-semibold text-primary">{format_number(copies)}</div>
-                    <div class="text-xs text-primary">{t("iconDetail.labels.copies")}</div>
-                  </div>
-                  <div class="px-3 py-1.5 bg-base-200 rounded-lg text-center">
-                    <div class="text-lg font-semibold text-success">{format_number(downloads)}</div>
-                    <div class="text-xs text-success">{t("iconDetail.labels.downloads")}</div>
-                  </div>
-                  <div class="px-3 py-1.5 bg-base-200 rounded-lg text-center">
-                    <div class="text-lg font-semibold text-base-content">{format_number(total)}</div>
-                    <div class="text-xs text-base-content/70">{t("iconDetail.labels.total")}</div>
-                  </div>
+                <div class="ml-auto flex items-center gap-3 text-sm">
+                  <span class="text-primary">
+                    <span class="font-semibold">{format_number(copies)}</span> {t("iconDetail.labels.copies")}
+                  </span>
+                  <span class="text-success">
+                    <span class="font-semibold">{format_number(downloads)}</span> {t("iconDetail.labels.downloads")}
+                  </span>
+                  <span class="text-base-content/70">
+                    <span class="font-semibold">{format_number(total)}</span> {t("iconDetail.labels.total")}
+                  </span>
                 </div>
               <% end %>
             </div>
