@@ -103,6 +103,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
       |> assign(session_uid: session_uid)
       |> assign(utm_data: utm_data)
       |> assign(last_tracked_query: nil)
+      |> assign(random_shown: false)
 
     duration_ms =
       System.convert_time_unit(System.monotonic_time() - mount_start, :native, :millisecond)
@@ -159,11 +160,18 @@ defmodule PureAdminIconsWeb.IconSearchLive do
         {styles, sizes, icon_sets}
       end
 
+    # One-shot random landing: the very first empty-query render of a session shows
+    # a random set of icons to make the page more interesting. Consumed after that
+    # render, so once the visitor has interacted (e.g. types "hroch" then clears it),
+    # an empty query falls back to the standard deterministic (a–z) ordering.
+    random? = query == "" and not Map.get(socket.assigns, :random_shown, false)
+
     assigns = %{
       selected_styles: styles,
       selected_sizes: sizes,
       selected_icon_sets: icon_sets,
-      page: page
+      page: page,
+      random: random?
     }
 
     {search_us, icons} = :timer.tc(fn -> search_icons(query, assigns) end)
@@ -226,7 +234,8 @@ defmodule PureAdminIconsWeb.IconSearchLive do
         total_pages: total_pages,
         selected_icon: nil,
         filters_initialized: true,
-        last_tracked_query: if(track_query?, do: query, else: socket.assigns[:last_tracked_query])
+        last_tracked_query: if(track_query?, do: query, else: socket.assigns[:last_tracked_query]),
+        random_shown: socket.assigns[:random_shown] || random?
       )
       |> maybe_save_filters(styles, sizes, icon_sets)
 
@@ -860,6 +869,8 @@ defmodule PureAdminIconsWeb.IconSearchLive do
         [] -> opts
         icon_sets -> [{:icon_sets, icon_sets} | opts]
       end
+
+    opts = if assigns[:random], do: [{:random, true} | opts], else: opts
 
     case Icons.search(query, opts) do
       {:ok, results} -> results

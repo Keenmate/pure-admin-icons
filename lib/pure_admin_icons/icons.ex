@@ -78,6 +78,11 @@ defmodule PureAdminIcons.Icons do
         cats when is_list(cats) -> Map.put(criteria, "categories", cats)
       end
 
+    # Random ordering switch — the web UI opts in once per session to make the
+    # empty-query landing page more interesting. Off for every normal query.
+    criteria =
+      if opts[:random], do: Map.put(criteria, "random", true), else: criteria
+
     criteria
   end
 

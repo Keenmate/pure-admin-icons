@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-28 — v0.6.6 — Random icons on the landing page (once per session)
+
+**A fresh set of icons greets each new session.** The empty-query landing page used to always render the same deterministic a–z slice. It now shows a *random* set on the first empty-query render of a session, to make the page more interesting. This is a one-shot: the moment the visitor interacts — e.g. types `hroch` then clears it back to empty — the empty query falls back to the standard a–z ordering, and pagination/filtering stays stable after the first page.
+
+**DB (`main` v1.24, `074_update_main_v1-24.sql`).** `public.search_icons` gains an optional `"random": true` criteria flag that reorders results by `random()` ahead of all ranking tiers, implemented as a `case when __random then random() end` ORDER BY key — a `NULL` no-op for every normal query, so ranking is byte-for-byte identical to v1.12 unless the caller opts in. The function signature is unchanged, so the generated DB wrappers stay valid (no db-gen regeneration).
+
+**App.** `Icons.build_search_criteria/2` maps an `:random` opt into the criteria JSON; `IconSearchLive` sets it only on the first empty-query render of the session (`random_shown` one-shot flag) and never for API/MCP callers.
+
+---
+
 ## 2026-09-28 — v0.6.5 — Live catalog counts in title/meta; license in detail; wider dialog
 
 **Catalog totals cached and wired into the page head.** The hardcoded `<title>` / OpenGraph / meta description advertised "39,000+ Icons from 8 Icon Sets" — long stale (it's now ~58,700 icons across 13 sets), and never updated because those strings were baked into `root.html.heex`. Added `PureAdminIcons.Catalog`, a `:persistent_term` cache (mirroring `IconSets.Color`) of total icon count, set count, and set titles, derived from a single `Icons.list_icon_sets/0` call. It's refreshed after every sync in `Sync.Worker.sync_all/1` (next to the brand-color refresh), so the import job keeps it current; reads never hit the DB, with a lazy fetch on cold start. `root.html.heex` now builds the title / OG / meta description from the cache, so they always reflect what's actually imported. The search LiveView drops its separate `Icons.count/0` round-trip too — the total is just the sum of the per-set counts it already loads on mount. The meta description was also trimmed to the set list (dropping the "Filter by style… Free JSON API." tail) so it isn't badly over-length.
